@@ -1,0 +1,13 @@
+{
+    "C_Cpp.default.cStandard": "c99",
+    "files.associations": {
+        "types.h": "c",
+        "math-vector.h": "c"
+    },
+    "cmake.sourceDirectory": "/home/lemito/Desktop/OSi/lab1",
+    "cmake.debugConfig": {
+        "args": [
+            "data.base",
+        ]
+    }
+}

@@ -66,7 +66,7 @@ int main(int argc, char** argv) {
 
     case 0: {  // Я - ребенок и не знаю свой PID
                // собственно узнаю
-      pid_t pid = getpid();
+      // pid_t pid = getpid();
 
       // подключаю родительский ввод к дочернему
       // то есть мой ввод - ввод родителя
@@ -95,7 +95,7 @@ int main(int argc, char** argv) {
         exit(EXIT_FAILURE);
       }
       close(pipe1[STDIN_FILENO]);
-
+      // close(pipe1[STDOUT_FILENO]);
       // {
       //   char msg[64];
       //   const int32_t length =
@@ -125,7 +125,7 @@ int main(int argc, char** argv) {
     } break;
 
     default: {  // Я родитель и знаю PID дочерный
-      pid_t pid = getpid();  // Получаем родительский PID
+      // pid_t pid = getpid();  // Получаем родительский PID
 
       // {
       //   char msg[64];
@@ -165,6 +165,7 @@ int main(int argc, char** argv) {
         write(STDERR_FILENO, msg, sizeof(msg));
         exit(child_status);
       }
+      close(pipe1[STDIN_FILENO]);
     } break;
   }
 }

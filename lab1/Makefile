@@ -4,7 +4,6 @@ FLAGS = -Wall -Werror -Wpedantic
 all:
 	$(CC) $(FLAGS) client.c -o client
 	$(CC) $(FLAGS) server.c -o server
-	make run
 run:
 	./server data.base
 clean: 

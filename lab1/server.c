@@ -1,5 +1,5 @@
 /**
- * @file posix_ipc-example-server.c
+ * @file server.c
  * @author your name (you@domain.com)
  * @brief
  * @version 0.1
@@ -17,7 +17,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-static char CLIENT_PROGRAM_NAME[] = "posix_ipc-example-client";
+static char CLIENT_PROGRAM_NAME[] = "client";
 
 int main(int argc, char** argv) {
   if (argc == 1) {
@@ -79,19 +79,29 @@ int main(int argc, char** argv) {
         exit(EXIT_FAILURE);
       }
 
-      dup2(file, STDIN_FILENO);  // stdin_no теперь файл
+      // stdin_no теперь файл | файл теперь поток входа
+      if (-1 == dup2(file, STDIN_FILENO)) {
+        const char msg[] = "error: to dup file as STDIN_FILENO\n";
+        write(STDERR_FILENO, msg, sizeof(msg));
+        exit(EXIT_FAILURE);
+      }
       close(file);
 
-      dup2(pipe1[STDOUT_FILENO],
-           STDOUT_FILENO);  // stdout_no теперь правый кончик pipe
+      // stdout_no теперь правый кончик pipe
+      if (-1 == dup2(pipe1[STDOUT_FILENO], STDOUT_FILENO)) {
+        const char msg[] =
+            "error: to dup pipe1[STDOUT_FILENO] as STDOUT_FILENO\n";
+        write(STDERR_FILENO, msg, sizeof(msg));
+        exit(EXIT_FAILURE);
+      }
       close(pipe1[STDIN_FILENO]);
 
-      {
-        char msg[64];
-        const int32_t length =
-            snprintf(msg, sizeof(msg), "%d: I'm a child\n", pid);
-        write(STDOUT_FILENO, msg, length);
-      }
+      // {
+      //   char msg[64];
+      //   const int32_t length =
+      //       snprintf(msg, sizeof(msg), "%d: I'm a child\n", pid);
+      //   write(STDOUT_FILENO, msg, length);
+      // }
 
       {
         char path[1024];
@@ -117,13 +127,13 @@ int main(int argc, char** argv) {
     default: {  // Я родитель и знаю PID дочерный
       pid_t pid = getpid();  // Получаем родительский PID
 
-      {
-        char msg[64];
-        const int32_t length =
-            snprintf(msg, sizeof(msg),
-                     "%d: I'm a parent, my child has PID %d\n", pid, child);
-        write(STDOUT_FILENO, msg, length);
-      }
+      // {
+      //   char msg[64];
+      //   const int32_t length =
+      //       snprintf(msg, sizeof(msg),
+      //                "%d: I'm a parent, my child has PID %d\n", pid, child);
+      //   write(STDOUT_FILENO, msg, length);
+      // }
 
       // dup2(pipe1[STDIN_FILENO], STDOUT_FILENO);
       close(pipe1[STDOUT_FILENO]);
@@ -133,23 +143,22 @@ int main(int argc, char** argv) {
       int child_status;
       wait(&child_status);
 
-      char buffer[4096];
-      ssize_t count;
+      {
+        char buffer[4096];
+        ssize_t count;
 
-      while ((count = read(pipe1[STDIN_FILENO], buffer, sizeof(buffer)))) {
-        if (count < 0) {
-          const char msg[] = "error: ferror reading from pipe\n";
-          write(STDERR_FILENO, msg, sizeof(msg));
-          exit(EXIT_FAILURE);
-        } else if (buffer[0] == '\n') {
-          // проверка на дурака
-          break;
+        while ((count = read(pipe1[STDIN_FILENO], buffer, sizeof(buffer)))) {
+          if (count < 0) {
+            const char msg[] = "error: ferror reading from pipe\n";
+            write(STDERR_FILENO, msg, sizeof(msg));
+            exit(EXIT_FAILURE);
+          } else if (buffer[0] == '\n') {
+            break;
+          }
         }
-        // write(STDOUT_FILENO, buffer, count);
-        // fprintf(stdout, "res = %s\n", buffer);
-      }
 
-      fprintf(stdout, "%s\n", buffer);
+        fprintf(stdout, "%s\n", buffer);
+      }
 
       if (child_status != EXIT_SUCCESS) {
         const char msg[] = "error: child exited with error\n";

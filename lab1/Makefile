@@ -2,15 +2,15 @@ CC = clang
 FLAGS = -Wall -Werror -Wpedantic
 
 all:
-	$(CC) $(FLAGS) posix_ipc-example-client.c -o posix_ipc-example-client
-	$(CC) $(FLAGS) posix_ipc-example-server.c -o posix_ipc-example-server
+	$(CC) $(FLAGS) client.c -o client
+	$(CC) $(FLAGS) server.c -o server
 	make run
 run:
-	./posix_ipc-example-server data.base
+	./server data.base
 clean: 
-	rm -rf posix_ipc-example-client posix_ipc-example-server
+	rm -rf client server
 trace:
-	strace -f ./posix_ipc-example-server data.base
+	strace -f ./server data.base
 rerun:
 	make clean
 	make

@@ -1,5 +1,5 @@
 /**
- * @file posix_ipc-example-client.c
+ * @file client.c
  * @author your name (you@domain.com)
  * @brief
  * @version 0.1
@@ -30,6 +30,10 @@ float summ(const char* src) {
     }
 
     float value = strtod(src, &endptr);
+    if (value == HUGE_VAL || value == -HUGE_VAL) {
+      return 0.0;
+    }
+
     if (endptr != src) {
       sum += value;
       src = endptr;
@@ -53,7 +57,7 @@ int main(int argc, char** argv) {
       write(STDERR_FILENO, msg, sizeof(msg));
       exit(EXIT_FAILURE);
     } else if (buf[0] == '\n') {
-      // проверка на дурака
+      // проверка на дурака + конец ввода
       break;
     }
 

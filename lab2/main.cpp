@@ -54,15 +54,19 @@ void myCout(char *text) {
 }
 
 int main(int argc, char **argv) {
-  if (argc != 2) {
+  if (argc != 3) {
     char BUF[BUFSIZ];
-    sprintf(BUF, "Input error. Use: %s %s\n", argv[0], "<rounds>");
+    sprintf(BUF, "Input error. Use: %s %s %s\n", argv[0],
+            "<threads>"
+            "<rounds>");
     myCout(BUF);
     exit(EXIT_FAILURE);
   }
-  // количество раундов
+  // ограничение потоков и количество раундов
   char *endptr;
-  size_t rounds = strtoull(argv[1], &endptr, 10);
+  size_t threads_num = atol(argv[1]);
+  char *endptr;
+  size_t rounds = atol(argv[2]);
 
   std::vector<pthread_t> threads(THREADS_NUM);
   char *mewo = strdup("meow");

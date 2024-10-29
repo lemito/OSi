@@ -22,8 +22,6 @@
 
 pthread_barrier_t barrier;
 
-typedef enum CARDS CARDS;
-
 std::atomic_int ac = 0;
 std::mutex m;
 
@@ -32,12 +30,22 @@ bool monteCarlo() {
   for (size_t i = 0; i < DECK_NUM; i++) {
     deck[i] = i;
   }
-  std::mt19937 random_generator;
+  std::random_device rd;
+  std::mt19937 random_generator(rd());
   std::shuffle(all(deck), random_generator);
   return (deck[0] % 13) == (deck[1] % 13);
 }
 
-void *just_do(void *args) { return NULL; }
+void *just_do(void *args) {
+  int cnt = 0;
+  size_t round = *(int *)args;
+  for (size_t i = 0; i < round; i++) {
+    if (monteCarlo()) {
+      ac++;
+    }
+  }
+  return NULL;
+}
 
 void myCout(char *text) {
   if (text == NULL) {
@@ -52,28 +60,38 @@ void myCout(char *text) {
 int main(int argc, char **argv) {
   if (argc != 3) {
     char BUF[BUFSIZ];
-    sprintf(BUF, "Input error. Use: %s %s %s\n", argv[0],
-            "<threads>"
-            "<rounds>");
+    sprintf(BUF, "Input error. Use: %s <threads> <rounds>\n", argv[0]);
     myCout(BUF);
     exit(EXIT_FAILURE);
   }
   // ограничение потоков и количество раундов
-  char *endptr;
   size_t threads_num = atol(argv[1]);
-  char *endptr;
   size_t rounds = atol(argv[2]);
 
   std::vector<pthread_t> threads(THREADS_NUM);
-  char *mewo = strdup("meow");
   pthread_barrier_init(&barrier, NULL, BARRIERS_NUM);
   for (size_t i = 0; i < THREADS_NUM; i++) {
-    pthread_create(&(threads[i]), NULL, just_do, mewo);
+    pthread_create(&(threads[i]), NULL, just_do, (void *)&rounds);
+  }
+
+  for (auto &thread : threads) {
+    pthread_join(thread, NULL);
   }
 
   {
     char BUF[BUFSIZ];
-    sprintf(BUF, "== %d ==\n", ac);
+    int b = ac.load();
+    sprintf(BUF, "== %d ==\n", b);
+    myCout(BUF);
+  }
+
+  int total_rounds = threads_num * rounds;
+  double probability = (double)(ac.load()) / rounds;
+
+  {
+    char BUF[BUFSIZ];
+    int f = ac.load();
+    sprintf(BUF, "== %f ==\n", probability);
     myCout(BUF);
   }
 

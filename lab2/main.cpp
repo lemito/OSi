@@ -6,6 +6,13 @@
 #include <unistd.h>
 #include <vector>
 
+#define print(text, ...)                                                       \
+  do {                                                                         \
+    char BUF[BUFSIZ];                                                          \
+    vsprintf(BUF, text, __VA_ARGS__);                                          \
+    myCout(BUF);                                                               \
+  } while (0)
+
 #define THREADS_NUM 16
 #define BARRIERS_NUM 16
 #define DECK_NUM 52
@@ -64,8 +71,11 @@ int main(int argc, char **argv) {
     pthread_create(&(threads[i]), NULL, just_do, mewo);
   }
 
-  std::cout << "== " << ac << " ==" << std::endl;
-  pthread_barrier_wait(&barrier);
+  {
+    char BUF[BUFSIZ];
+    sprintf(BUF, "== %d ==\n", ac);
+    myCout(BUF);
+  }
 
   pthread_barrier_destroy(&barrier);
   return EXIT_SUCCESS;

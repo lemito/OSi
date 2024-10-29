@@ -38,7 +38,6 @@ bool monteCarlo() {
 }
 
 void *just_do(void *args) {
-  int cnt = 0;
   size_t round = *(size_t *)args;
   for (size_t i = 0; i < round; i++) {
     if (monteCarlo()) {

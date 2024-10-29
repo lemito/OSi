@@ -46,5 +46,11 @@
         "stdexcept": "cpp",
         "streambuf": "cpp",
         "typeinfo": "cpp"
+    },
+    "cmake.debugConfig": {
+        "args": [
+            "2",
+            "5"
+        ]
     }
 }

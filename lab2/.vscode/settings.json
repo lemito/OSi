@@ -45,12 +45,13 @@
         "numbers": "cpp",
         "stdexcept": "cpp",
         "streambuf": "cpp",
-        "typeinfo": "cpp"
+        "typeinfo": "cpp",
+        "barrier": "cpp"
     },
     "cmake.debugConfig": {
         "args": [
-            "2",
-            "5"
+            "16",
+            "100000"
         ]
     }
 }

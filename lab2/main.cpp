@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <atomic>
+#include <barrier>
 #include <iostream>
 #include <mutex>
 #include <pthread.h>
@@ -67,7 +68,7 @@ int main(int argc, char **argv) {
   // ограничение потоков и количество раундов
   size_t threads_num = atol(argv[1]);
   size_t rounds = atol(argv[2]);
-
+  // std::barrier barrier(threads_num);
   std::vector<pthread_t> threads(THREADS_NUM);
   pthread_barrier_init(&barrier, NULL, BARRIERS_NUM);
   for (size_t i = 0; i < THREADS_NUM; i++) {

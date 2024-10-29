@@ -16,7 +16,7 @@ enum CARDS {
 };
 typedef enum CARDS CARDS;
 
-std::atomic<int> ac = 0;
+std::atomic_int ac = 0;
 
 void *just_do(void *args) {
   char DECK[DECK_NUM];
@@ -39,7 +39,7 @@ int main() {
     pthread_create(&(threads[i]), NULL, just_do, mewo);
   }
 
-  std::cout <<  "== " << ac << " ==" << std::endl;
+  std::cout << "== " << ac << " ==" << std::endl;
 
   return 0;
 }

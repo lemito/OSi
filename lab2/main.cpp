@@ -85,12 +85,11 @@ int main(int argc, char **argv) {
     myCout(BUF);
   }
 
-  int total_rounds = threads_num * rounds;
-  double probability = (double)(ac.load()) / rounds;
-
   {
-    char BUF[BUFSIZ];
+    int total_rounds = threads_num * rounds;
     int f = ac.load();
+    double probability = (double)f / (double)total_rounds;
+    char BUF[BUFSIZ];
     sprintf(BUF, "== %f ==\n", probability);
     myCout(BUF);
   }

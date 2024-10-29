@@ -1,6 +1,9 @@
+#include <algorithm>
 #include <atomic>
 #include <iostream>
+#include <mutex>
 #include <pthread.h>
+#include <random>
 #include <stdatomic.h>
 #include <string.h>
 #include <unistd.h>
@@ -12,36 +15,29 @@
     vsprintf(BUF, text, __VA_ARGS__);                                          \
     myCout(BUF);                                                               \
   } while (0)
-
+#define all(x) x.begin(), x.end()
 #define THREADS_NUM 16
 #define BARRIERS_NUM 16
 #define DECK_NUM 52
 
 pthread_barrier_t barrier;
 
-enum CARDS {
-  PICKS = '1',  // пики
-  BUBIS = '2',  // буби
-  CHERVI = '3', // черви
-  CRESTI = '4'  // крести
-};
 typedef enum CARDS CARDS;
 
 std::atomic_int ac = 0;
+std::mutex m;
 
-void *just_do(void *args) {
-  char DECK[DECK_NUM];
+bool monteCarlo() {
+  std::vector<int> deck(DECK_NUM);
   for (size_t i = 0; i < DECK_NUM; i++) {
-    DECK[i] = PICKS;
+    deck[i] = i;
   }
-  // for (size_t i = 0; i < DECK_NUM; i++) {
-  //   std::cout << DECK[i] << " ";
-  // }
-  char *input = (char *)args;
-  ac++;
-  // std::cout << input << std::endl;
-  return NULL;
+  std::mt19937 random_generator;
+  std::shuffle(all(deck), random_generator);
+  return (deck[0] % 13) == (deck[1] % 13);
 }
+
+void *just_do(void *args) { return NULL; }
 
 void myCout(char *text) {
   if (text == NULL) {

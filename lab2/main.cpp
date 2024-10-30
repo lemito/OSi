@@ -37,8 +37,7 @@ bool monteCarlo() {
   std::random_device rd;
   std::mt19937 random_generator(rd());
   std::shuffle(all(deck), random_generator);
-  // return (deck[0] % 13) == (deck[1] % 13); // одинаковые МАСТИ
-  return deck[0] == deck[1]; // одинаковые КАРТЫ (тут как бы всегда 0)
+  return (deck[0] % 13) == (deck[1] % 13); // одинаковые МАСТИ
 }
 
 void *just_do(void *args) {
@@ -55,22 +54,14 @@ void *just_do(void *args) {
   return NULL;
 }
 
-void myCout(char *text) {
-  if (text == NULL) {
-    return;
-  }
-  if (-1 == write(STDOUT_FILENO, text, strlen(text))) {
-    exit(EXIT_FAILURE);
-  }
-  return;
-}
-
 void _print(char *fmt, ...) {
   va_list args;
   va_start(args, fmt);
   char BUF[BUFSIZ];
   vsprintf(BUF, fmt, args);
-  myCout(BUF);
+  if (-1 == write(STDOUT_FILENO, BUF, strlen(BUF))) {
+    exit(EXIT_FAILURE);
+  }
   va_end(args);
 }
 
@@ -110,7 +101,7 @@ int main(int argc, char **argv) {
     double probability = (double)f / (double)total_rounds;
     char BUF[BUFSIZ];
     sprintf(BUF, "== %f ==\n", probability);
-    myCout(BUF);
+    _print("%s\n", BUF);
   }
 
   // pthread_barrier_destroy(&barrier);

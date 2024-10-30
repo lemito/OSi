@@ -1,16 +1,10 @@
 #include <algorithm>
 #include <atomic>
-#include <barrier>
-#include <iostream>
-#include <mutex>
 #include <pthread.h>
 #include <random>
-// #include <stdarg.h>
-#include <cstdarg>
-#include <stdatomic.h>
+#include <stdarg.h>
 #include <string.h>
 #include <unistd.h>
-#include <vector>
 
 #define print(text, ...)                                                       \
   do {                                                                         \
@@ -23,11 +17,7 @@
 #define BARRIERS_NUM 16
 #define DECK_NUM 52
 
-// pthread_barrier_t barrier;
-// int cnt = 0;
-
-std::atomic_int ac = 0;
-// std::mutex m;
+std::atomic_int ac{0};
 
 bool monteCarlo() {
   std::vector<int> deck(DECK_NUM);
@@ -45,12 +35,8 @@ void *just_do(void *args) {
   for (size_t i = 0; i < round; i++) {
     if (monteCarlo()) {
       ++ac;
-      // m.lock();
-      // cnt++;
-      // m.unlock();
     }
   }
-  // std::cout << "I am done! ";
   return NULL;
 }
 
@@ -73,9 +59,7 @@ int main(int argc, char **argv) {
   // ограничение потоков и количество раундов
   size_t threads_num = atol(argv[1]);
   size_t rounds = atol(argv[2]);
-  // std::barrier barrier(threads_num);
   std::vector<pthread_t> threads(threads_num);
-  // pthread_barrier_init(&barrier, NULL, BARRIERS_NUM);
   for (size_t i = 0; i < threads_num; i++) {
     if (-1 == pthread_create(&(threads[i]), NULL, just_do, (void *)&rounds)) {
       _print("Error. Thread %d nor created\n", i);
@@ -90,12 +74,14 @@ int main(int argc, char **argv) {
     };
   }
 
+  // выводилка удачный попаданий
   {
     int b = ac.load();
     _print("== %d ==\n", b);
   }
 
   {
+    // расчеты
     int total_rounds = threads_num * rounds;
     int f = ac.load();
     double probability = (double)f / (double)total_rounds;
@@ -104,6 +90,5 @@ int main(int argc, char **argv) {
     _print("%s\n", BUF);
   }
 
-  // pthread_barrier_destroy(&barrier);
   return EXIT_SUCCESS;
 }

@@ -5,7 +5,8 @@
 #include <mutex>
 #include <pthread.h>
 #include <random>
-#include <stdarg.h>
+// #include <stdarg.h>
+#include <cstdarg>
 #include <stdatomic.h>
 #include <string.h>
 #include <unistd.h>
@@ -75,18 +76,16 @@ void _print(char *fmt, ...) {
 
 int main(int argc, char **argv) {
   if (argc != 3) {
-    char BUF[BUFSIZ];
-    sprintf(BUF, "Input error. Use: %s <threads> <rounds>\n", argv[0]);
-    myCout(BUF);
+    _print("Input error. Use: %s <threads> <rounds>\n", argv[0]);
     exit(EXIT_FAILURE);
   }
   // ограничение потоков и количество раундов
   size_t threads_num = atol(argv[1]);
   size_t rounds = atol(argv[2]);
   // std::barrier barrier(threads_num);
-  std::vector<pthread_t> threads(THREADS_NUM);
+  std::vector<pthread_t> threads(threads_num);
   // pthread_barrier_init(&barrier, NULL, BARRIERS_NUM);
-  for (size_t i = 0; i < THREADS_NUM; i++) {
+  for (size_t i = 0; i < threads_num; i++) {
     if (-1 == pthread_create(&(threads[i]), NULL, just_do, (void *)&rounds)) {
       _print("Error. Thread %d nor created\n", i);
       exit(EXIT_FAILURE);

@@ -19,23 +19,43 @@
 
 std::atomic_int ac{0};
 
-bool monteCarlo() {
-  std::vector<int> deck(DECK_NUM);
-  for (size_t i = 0; i < DECK_NUM; i++) {
-    deck[i] = i;
+// bool monteCarlo() {
+//   std::vector<int> deck(DECK_NUM);
+//   for (size_t i = 0; i < DECK_NUM; i++) {
+//     deck[i] = i;
+//   }
+//   std::random_device rd;
+//   std::mt19937 random_generator(rd());
+//   std::shuffle(all(deck), random_generator);
+//   return (deck[0] % 13) == (deck[1] % 13); // одинаковые МАСТИ
+// }
+void shuffleDeck(std::vector<int> &deck) {
+  srand(time(NULL));
+  for (int i = DECK_NUM - 1; i > 0; i--) {
+    int j = rand() % (i + 1);
+    int temp = deck[i];
+    deck[i] = deck[j];
+    deck[j] = temp;
   }
-  std::random_device rd;
-  std::mt19937 random_generator(rd());
-  std::shuffle(all(deck), random_generator);
-  return (deck[0] % 13) == (deck[1] % 13); // одинаковые МАСТИ
 }
 
 void *just_do(void *args) {
   size_t round = *(size_t *)args;
   for (size_t i = 0; i < round; i++) {
-    if (monteCarlo()) {
-      ++ac;
+    // if (monteCarlo()) {
+    //   ++ac;
+    // }
+    std::vector<int> deck(DECK_NUM);
+    for (size_t j = 0; j < DECK_NUM; j++) {
+      deck[j] = j;
     }
+    std::random_device rd;
+    std::mt19937 random_generator(rd());
+    std::shuffle(all(deck), random_generator);
+    // shuffleDeck(deck);
+    if ((deck[0] % 13) == (deck[1] % 13)) {
+      ac++;
+    } // одинаковые МАСТИ
   }
   return NULL;
 }

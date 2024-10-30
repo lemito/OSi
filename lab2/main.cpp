@@ -5,6 +5,7 @@
 #include <mutex>
 #include <pthread.h>
 #include <random>
+#include <stdarg.h>
 #include <stdatomic.h>
 #include <string.h>
 #include <unistd.h>
@@ -21,10 +22,11 @@
 #define BARRIERS_NUM 16
 #define DECK_NUM 52
 
-pthread_barrier_t barrier;
+// pthread_barrier_t barrier;
+// int cnt = 0;
 
 std::atomic_int ac = 0;
-std::mutex m;
+// std::mutex m;
 
 bool monteCarlo() {
   std::vector<int> deck(DECK_NUM);
@@ -34,16 +36,21 @@ bool monteCarlo() {
   std::random_device rd;
   std::mt19937 random_generator(rd());
   std::shuffle(all(deck), random_generator);
-  return (deck[0] % 13) == (deck[1] % 13);
+  // return (deck[0] % 13) == (deck[1] % 13); // одинаковые МАСТИ
+  return deck[0] == deck[1]; // одинаковые КАРТЫ (тут как бы всегда 0)
 }
 
 void *just_do(void *args) {
   size_t round = *(size_t *)args;
   for (size_t i = 0; i < round; i++) {
     if (monteCarlo()) {
-      ac++;
+      ++ac;
+      // m.lock();
+      // cnt++;
+      // m.unlock();
     }
   }
+  // std::cout << "I am done! ";
   return NULL;
 }
 
@@ -55,6 +62,15 @@ void myCout(char *text) {
     exit(EXIT_FAILURE);
   }
   return;
+}
+
+void _print(char *fmt, ...) {
+  va_list args;
+  va_start(args, fmt);
+  char BUF[BUFSIZ];
+  vsprintf(BUF, fmt, args);
+  myCout(BUF);
+  va_end(args);
 }
 
 int main(int argc, char **argv) {
@@ -69,20 +85,24 @@ int main(int argc, char **argv) {
   size_t rounds = atol(argv[2]);
   // std::barrier barrier(threads_num);
   std::vector<pthread_t> threads(THREADS_NUM);
-  pthread_barrier_init(&barrier, NULL, BARRIERS_NUM);
+  // pthread_barrier_init(&barrier, NULL, BARRIERS_NUM);
   for (size_t i = 0; i < THREADS_NUM; i++) {
-    pthread_create(&(threads[i]), NULL, just_do, (void *)&rounds);
+    if (-1 == pthread_create(&(threads[i]), NULL, just_do, (void *)&rounds)) {
+      _print("Error. Thread %d nor created\n", i);
+      exit(EXIT_FAILURE);
+    };
   }
 
   for (auto &thread : threads) {
-    pthread_join(thread, NULL);
+    if (-1 == pthread_join(thread, NULL)) {
+      _print("Error. Thread not joined\n");
+      exit(EXIT_FAILURE);
+    };
   }
 
   {
-    char BUF[BUFSIZ];
     int b = ac.load();
-    sprintf(BUF, "== %d ==\n", b);
-    myCout(BUF);
+    _print("== %d ==\n", b);
   }
 
   {
@@ -94,6 +114,6 @@ int main(int argc, char **argv) {
     myCout(BUF);
   }
 
-  pthread_barrier_destroy(&barrier);
+  // pthread_barrier_destroy(&barrier);
   return EXIT_SUCCESS;
 }

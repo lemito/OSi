@@ -19,16 +19,6 @@
 
 std::atomic_int ac{0};
 
-// bool monteCarlo() {
-//   std::vector<int> deck(DECK_NUM);
-//   for (size_t i = 0; i < DECK_NUM; i++) {
-//     deck[i] = i;
-//   }
-//   std::random_device rd;
-//   std::mt19937 random_generator(rd());
-//   std::shuffle(all(deck), random_generator);
-//   return (deck[0] % 13) == (deck[1] % 13); // одинаковые МАСТИ
-// }
 void shuffleDeck(std::vector<int> &deck) {
   srand(time(NULL));
   for (int i = DECK_NUM - 1; i > 0; i--) {
@@ -42,9 +32,6 @@ void shuffleDeck(std::vector<int> &deck) {
 void *just_do(void *args) {
   size_t round = *(size_t *)args;
   for (size_t i = 0; i < round; i++) {
-    // if (monteCarlo()) {
-    //   ++ac;
-    // }
     std::vector<int> deck(DECK_NUM);
     for (size_t j = 0; j < DECK_NUM; j++) {
       deck[j] = j;
@@ -52,10 +39,9 @@ void *just_do(void *args) {
     std::random_device rd;
     std::mt19937 random_generator(rd());
     std::shuffle(all(deck), random_generator);
-    // shuffleDeck(deck);
-    if ((deck[0] % 4) == (deck[1] % 4)) {
+    if (deck[0] % 4 == deck[1] % 4) {
       ac++;
-    } // одинаковые МАСТИ
+    }
   }
   return NULL;
 }
@@ -76,13 +62,18 @@ int main(int argc, char **argv) {
     _print("Input error. Use: %s <threads> <rounds>\n", argv[0]);
     exit(EXIT_FAILURE);
   }
+  if (argv[1] == NULL || argv[2] == NULL) {
+    _print("Input error. Use: %s <threads> <rounds>\n", argv[0]);
+    exit(EXIT_FAILURE);
+  }
   // ограничение потоков и количество раундов
   size_t threads_num = atol(argv[1]);
   size_t rounds = atol(argv[2]);
   size_t rounds_for_thread = rounds / threads_num;
   std::vector<pthread_t> threads(threads_num);
   for (size_t i = 0; i < threads_num; i++) {
-    if (-1 == pthread_create(&(threads[i]), NULL, just_do, (void *)&rounds_for_thread)) {
+    if (-1 == pthread_create(&(threads[i]), NULL, just_do,
+                             (void *)&rounds_for_thread)) {
       _print("Error. Thread %d nor created\n", i);
       exit(EXIT_FAILURE);
     };

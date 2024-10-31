@@ -40,7 +40,7 @@ void *just_do(void *args) {
     std::mt19937 random_generator(rd());
     std::shuffle(all(deck), random_generator);
     if (deck[0] % 4 == deck[1] % 4) {
-      ac++;
+      ++ac;
     }
   }
   return NULL;

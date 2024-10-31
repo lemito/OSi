@@ -53,7 +53,7 @@ void *just_do(void *args) {
     std::mt19937 random_generator(rd());
     std::shuffle(all(deck), random_generator);
     // shuffleDeck(deck);
-    if ((deck[0] % 13) == (deck[1] % 13)) {
+    if ((deck[0] % 4) == (deck[1] % 4)) {
       ac++;
     } // одинаковые МАСТИ
   }

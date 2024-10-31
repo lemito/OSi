@@ -79,9 +79,10 @@ int main(int argc, char **argv) {
   // ограничение потоков и количество раундов
   size_t threads_num = atol(argv[1]);
   size_t rounds = atol(argv[2]);
+  size_t rounds_for_thread = rounds / threads_num;
   std::vector<pthread_t> threads(threads_num);
   for (size_t i = 0; i < threads_num; i++) {
-    if (-1 == pthread_create(&(threads[i]), NULL, just_do, (void *)&rounds)) {
+    if (-1 == pthread_create(&(threads[i]), NULL, just_do, (void *)&rounds_for_thread)) {
       _print("Error. Thread %d nor created\n", i);
       exit(EXIT_FAILURE);
     };
@@ -102,7 +103,7 @@ int main(int argc, char **argv) {
 
   {
     // расчеты
-    int total_rounds = threads_num * rounds;
+    int total_rounds = rounds; // threads_num * rounds;
     int f = ac.load();
     double probability = (double)f / (double)total_rounds;
     char BUF[BUFSIZ];

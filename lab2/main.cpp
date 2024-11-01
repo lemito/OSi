@@ -19,16 +19,6 @@
 
 std::atomic_int ac{0};
 
-void shuffleDeck(std::vector<int> &deck) {
-  srand(time(NULL));
-  for (int i = DECK_NUM - 1; i > 0; i--) {
-    int j = rand() % (i + 1);
-    int temp = deck[i];
-    deck[i] = deck[j];
-    deck[j] = temp;
-  }
-}
-
 void *just_do(void *args) {
   size_t round = *(size_t *)args;
   for (size_t i = 0; i < round; i++) {

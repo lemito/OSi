@@ -1,7 +1,10 @@
 #include <algorithm>
 #include <atomic>
+#include <iostream>
+#include <mutex>
 #include <pthread.h>
 #include <random>
+#include <shared_mutex>
 #include <stdarg.h>
 #include <string.h>
 #include <unistd.h>
@@ -18,21 +21,27 @@
 #define DECK_NUM 52
 
 std::atomic_int ac{0};
+std::vector<int> deck(DECK_NUM);
+std::mutex m;
 
 void *just_do(void *args) {
   size_t round = *(size_t *)args;
-  std::vector<int> deck(DECK_NUM);
+  std::random_device rd;
+  std::mt19937 random_generator(rd());
+  int local = 0;
+  m.lock();
   for (size_t j = 0; j < DECK_NUM; j++) {
     deck[j] = j;
   }
   for (size_t i = 0; i < round; i++) {
-    std::random_device rd;
-    std::mt19937 random_generator(rd());
     std::shuffle(all(deck), random_generator);
     if (deck[0] % 4 == deck[1] % 4) {
-      ++ac;
+      ++local;
     }
   }
+  m.unlock();
+  ac += local;
+
   return NULL;
 }
 
@@ -61,6 +70,9 @@ int main(int argc, char **argv) {
   size_t rounds = atol(argv[2]);
   size_t rounds_for_thread = rounds / threads_num;
   std::vector<pthread_t> threads(threads_num);
+  // for (size_t j = 0; j < DECK_NUM; j++) {
+  //   deck[j] = j;
+  // }
   for (size_t i = 0; i < threads_num; i++) {
     if (-1 == pthread_create(&(threads[i]), NULL, just_do,
                              (void *)&rounds_for_thread)) {

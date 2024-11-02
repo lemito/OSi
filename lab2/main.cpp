@@ -21,11 +21,11 @@ std::atomic_int ac{0};
 
 void *just_do(void *args) {
   size_t round = *(size_t *)args;
+  std::vector<int> deck(DECK_NUM);
+  for (size_t j = 0; j < DECK_NUM; j++) {
+    deck[j] = j;
+  }
   for (size_t i = 0; i < round; i++) {
-    std::vector<int> deck(DECK_NUM);
-    for (size_t j = 0; j < DECK_NUM; j++) {
-      deck[j] = j;
-    }
     std::random_device rd;
     std::mt19937 random_generator(rd());
     std::shuffle(all(deck), random_generator);

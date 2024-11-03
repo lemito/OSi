@@ -1,12 +1,13 @@
-
 #include <algorithm>
 #include <atomic>
+#include <iostream>
+#include <mutex>
 #include <pthread.h>
 #include <random>
+#include <shared_mutex>
 #include <stdarg.h>
 #include <string.h>
 #include <unistd.h>
-#include <vector>
 
 #define print(text, ...)                                                       \
   do {                                                                         \
@@ -20,13 +21,15 @@
 #define DECK_NUM 52
 
 std::atomic_int ac{0};
+std::vector<int> deck(DECK_NUM);
+std::mutex m;
 
 void *just_do(void *args) {
   size_t round = *(size_t *)args;
   std::random_device rd;
   std::mt19937 random_generator(rd());
   int local = 0;
-  std::vector<int> deck(DECK_NUM);
+  m.lock();
   for (size_t j = 0; j < DECK_NUM; j++) {
     deck[j] = j;
   }
@@ -36,6 +39,7 @@ void *just_do(void *args) {
       ++local;
     }
   }
+  m.unlock();
   ac += local;
 
   return NULL;

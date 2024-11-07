@@ -1,5 +1,6 @@
 
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <pthread.h>
 #include <random>
@@ -26,7 +27,7 @@ void *just_do(void *args) {
   std::random_device rd;
   std::mt19937 random_generator(rd());
   int local = 0;
-  std::vector<int> deck(DECK_NUM);
+  std::array<int, DECK_NUM> deck; // (DECK_NUM)
   for (size_t j = 0; j < DECK_NUM; j++) {
     deck[j] = j;
   }

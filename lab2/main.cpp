@@ -66,10 +66,11 @@ int main(int argc, char **argv) {
   size_t threads_num = atol(argv[1]);
   size_t rounds = atol(argv[2]);
   size_t rounds_for_thread = rounds / threads_num;
+  if (rounds % threads_num != 0) {
+    threads_num++;
+  }
+  rounds_for_thread = rounds / threads_num;
   std::vector<pthread_t> threads(threads_num);
-  // for (size_t j = 0; j < DECK_NUM; j++) {
-  //   deck[j] = j;
-  // }
   for (size_t i = 0; i < threads_num; i++) {
     if (-1 == pthread_create(&(threads[i]), NULL, just_do,
                              (void *)&rounds_for_thread)) {

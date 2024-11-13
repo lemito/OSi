@@ -9,15 +9,7 @@
 #include <unistd.h>
 #include <vector>
 
-#define print(text, ...)                                                       \
-  do {                                                                         \
-    char BUF[BUFSIZ];                                                          \
-    vsprintf(BUF, text, __VA_ARGS__);                                          \
-    myCout(BUF);                                                               \
-  } while (0)
 #define all(x) x.begin(), x.end()
-#define THREADS_NUM 16
-#define BARRIERS_NUM 16
 #define DECK_NUM 52
 
 std::atomic_int ac{0};
@@ -86,16 +78,11 @@ int main(int argc, char **argv) {
     };
   }
 
-  // выводилка удачный попаданий
-  {
-    int b = ac.load();
-    _print("== %d ==\n", b);
-  }
-
   {
     // расчеты
     int total_rounds = rounds; // threads_num * rounds;
     int f = ac.load();
+    _print("== %d ==\n", f);
     double probability = (double)f / (double)total_rounds;
     char BUF[BUFSIZ];
     sprintf(BUF, "== %f ==\n", probability);

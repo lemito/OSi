@@ -1,4 +1,3 @@
-
 #include <algorithm>
 #include <array>
 #include <atomic>
@@ -12,7 +11,7 @@
 #define all(x) x.begin(), x.end()
 #define DECK_NUM 52
 
-std::atomic_int ac{0};
+std::atomic_int ac = 0;
 
 void *just_do(void *args) {
   size_t round = *(size_t *)args;

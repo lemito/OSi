@@ -14,8 +14,13 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+
+#define SHM_NAME "MyBeautifulSharedMemory"
 
 static char CLIENT_PROGRAM_NAME[] = "client";
 
@@ -46,14 +51,6 @@ int main(int argc, char** argv) {
     progpath[len] = '\0';
   }
 
-  // открываем поток (односторонний)
-  int pipe1[2];
-  if (pipe(pipe1) == -1) {
-    const char msg[] = "error: failed to create pipe\n";
-    write(STDERR_FILENO, msg, sizeof(msg));
-    exit(EXIT_FAILURE);
-  }
-
   // создаем новый процесс
   const pid_t child = fork();
 
@@ -65,13 +62,9 @@ int main(int argc, char** argv) {
     } break;
 
     case 0: {  // Я - ребенок и не знаю свой PID
-               // собственно узнаю
-      // pid_t pid = getpid();
+      // собственно узнаю
 
-      // подключаю родительский ввод к дочернему
-      // то есть мой ввод - ввод родителя
-      // dup2(STDIN_FILENO, pipe1[STDIN_FILENO]);
-      // close(pipe1[STDOUT_FILENO]);
+      void* src;
 
       int file = open(argv[1], O_RDONLY);
       if (file == -1) {
@@ -79,29 +72,35 @@ int main(int argc, char** argv) {
         exit(EXIT_FAILURE);
       }
 
-      // stdin_no теперь файл | файл теперь поток входа
-      if (-1 == dup2(file, STDIN_FILENO)) {
-        const char msg[] = "error: to dup file as STDIN_FILENO\n";
+      struct stat file_stat;
+      if (fstat(file, &file_stat) < 0) {
+        const char msg[] = "error: failed create stat for file\n";
         write(STDERR_FILENO, msg, sizeof(msg));
         exit(EXIT_FAILURE);
       }
-      close(file);
 
-      // stdout_no теперь правый кончик pipe
-      if (-1 == dup2(pipe1[STDOUT_FILENO], STDOUT_FILENO)) {
-        const char msg[] =
-            "error: to dup pipe1[STDOUT_FILENO] as STDOUT_FILENO\n";
+      if (lseek(file, file_stat.st_size - 1, SEEK_SET) == -1) {
+        const char msg[] = "error: lseek\n";
         write(STDERR_FILENO, msg, sizeof(msg));
         exit(EXIT_FAILURE);
       }
-      close(pipe1[STDIN_FILENO]);
-      // close(pipe1[STDOUT_FILENO]);
-      // {
-      //   char msg[64];
-      //   const int32_t length =
-      //       snprintf(msg, sizeof(msg), "%d: I'm a child\n", pid);
-      //   write(STDOUT_FILENO, msg, length);
-      // }
+
+      if ((src = mmap(0, file_stat.st_size, PROT_READ, MAP_SHARED, file, 0)) ==
+          MAP_FAILED) {
+        const char msg[] = "error: mmaping\n";
+        write(STDERR_FILENO, msg, sizeof(msg));
+        exit(EXIT_FAILURE);
+      }
+
+      fprintf(stdout, "%s\n", src);
+
+      int shm_fd = shm_open(SHM_NAME, O_CREAT | O_WRONLY, 0222);
+      ftruncate(shm_fd, file_stat.st_size);
+      if ((shm_fd) == -1) {
+        const char msg[] = "error: shm_open child\n";
+        write(STDERR_FILENO, msg, sizeof(msg));
+        exit(EXIT_FAILURE);
+      }
 
       {
         char path[1024];
@@ -127,37 +126,17 @@ int main(int argc, char** argv) {
     default: {  // Я родитель и знаю PID дочерный
       // pid_t pid = getpid();  // Получаем родительский PID
 
-      // {
-      //   char msg[64];
-      //   const int32_t length =
-      //       snprintf(msg, sizeof(msg),
-      //                "%d: I'm a parent, my child has PID %d\n", pid, child);
-      //   write(STDOUT_FILENO, msg, length);
-      // }
-
-      // dup2(pipe1[STDIN_FILENO], STDOUT_FILENO);
-      close(pipe1[STDOUT_FILENO]);
-
       // NOTE: `wait` blocks the parent until child exits
       // блокируем родителя до конца выполнения дочерних процессов
       int child_status;
       wait(&child_status);
 
-      {
-        char buffer[4096];
-        ssize_t count;
-
-        while ((count = read(pipe1[STDIN_FILENO], buffer, sizeof(buffer)))) {
-          if (count < 0) {
-            const char msg[] = "error: ferror reading from pipe\n";
-            write(STDERR_FILENO, msg, sizeof(msg));
-            exit(EXIT_FAILURE);
-          } else if (buffer[0] == '\n') {
-            break;
-          }
-        }
-
-        fprintf(stdout, "%s\n", buffer);
+      int shm_fd;
+      if ((shm_fd = shm_open(SHM_NAME, O_RDONLY, 0444)) == -1) {
+        perror("meow");
+        const char msg[] = "error: shm_open parrent\n";
+        write(STDERR_FILENO, msg, sizeof(msg));
+        exit(EXIT_FAILURE);
       }
 
       if (child_status != EXIT_SUCCESS) {
@@ -165,7 +144,8 @@ int main(int argc, char** argv) {
         write(STDERR_FILENO, msg, sizeof(msg));
         exit(child_status);
       }
-      close(pipe1[STDIN_FILENO]);
     } break;
   }
+
+  shm_unlink(SHM_NAME);
 }

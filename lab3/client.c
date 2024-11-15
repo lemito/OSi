@@ -49,6 +49,25 @@ int main(int argc, char** argv) {
   char buf[4096];
   ssize_t bytes;
 
+  // int shm_fd;
+
+  // // Открытие существующей разделяемой памяти
+  // if ((shm_fd = shm_open(SHM_NAME, O_RDONLY, 0444)) == -1) {
+  //   perror("shm_open");
+  //   const char msg[] = "error: shm_open child\n";
+  //   write(STDERR_FILENO, msg, sizeof(msg));
+  //   exit(EXIT_FAILURE);
+  // }
+
+  // // Отображение разделяемой памяти
+  // char* ptr = mmap(0, SIZE, PROT_READ, MAP_SHARED, shm_fd, 0);
+
+  // // Чтение из разделяемой памяти
+  // printf("Data from shared memory: %s\n", ptr);
+
+  // // Закрытие разделяемой памяти
+  // munmap(ptr, SIZE);
+
   // pid_t pid = getpid();
 
   while ((bytes = read(STDIN_FILENO, buf, sizeof(buf)))) {

@@ -4,7 +4,7 @@
         "types.h": "c",
         "math-vector.h": "c"
     },
-    "cmake.sourceDirectory": "/home/lemito/Desktop/OSi/lab1",
+    "cmake.sourceDirectory": "/home/lemito/Desktop/OSi/lab3",
     "cmake.debugConfig": {
         "args": [
             "data.base",

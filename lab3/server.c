@@ -20,7 +20,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#define SHM_NAME "MyBeautifulSharedMemory"
+#include "pool.h"
 
 static char CLIENT_PROGRAM_NAME[] = "client";
 
@@ -66,6 +66,7 @@ int main(int argc, char** argv) {
 
       void* src;
 
+      /* файл*/
       int file = open(argv[1], O_RDONLY);
       if (file == -1) {
         perror("Ошибка при открытии файла");
@@ -92,15 +93,23 @@ int main(int argc, char** argv) {
         exit(EXIT_FAILURE);
       }
 
-      fprintf(stdout, "%s\n", src);
-
-      int shm_fd = shm_open(SHM_NAME, O_CREAT | O_WRONLY, 0222);
-      ftruncate(shm_fd, file_stat.st_size);
-      if ((shm_fd) == -1) {
+      /* запись ответа */
+      int shm_fd = shm_open(SHM_NAME, O_CREAT | O_RDWR, 0666);
+      if (shm_fd == -1) {
         const char msg[] = "error: shm_open child\n";
         write(STDERR_FILENO, msg, sizeof(msg));
         exit(EXIT_FAILURE);
       }
+      ftruncate(shm_fd, file_stat.st_size);
+
+      char* read_ptr = mmap(0, file_stat.st_size, PROT_READ | PROT_WRITE,
+                            MAP_SHARED, shm_fd, 0);
+      if (read_ptr == MAP_FAILED) {
+        perror("mmap");
+        exit(EXIT_FAILURE);
+      }
+
+      fprintf(stdout, "%s\n", src);
 
       {
         char path[1024];
@@ -131,6 +140,7 @@ int main(int argc, char** argv) {
       int child_status;
       wait(&child_status);
 
+      // чтение ответа
       int shm_fd;
       if ((shm_fd = shm_open(SHM_NAME, O_RDONLY, 0444)) == -1) {
         perror("meow");
@@ -147,5 +157,5 @@ int main(int argc, char** argv) {
     } break;
   }
 
-  shm_unlink(SHM_NAME);
+  // shm_unlink(SHM_NAME);
 }

@@ -18,8 +18,17 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+// #include <bits/mman-linux.h>
+#include <sys/mman.h>
+
+#include "pool.h"
+
+#define SIZE BUFSIZ
 
 float summ(const char* src) {
+  if (src == NULL) {
+    return 0.0;
+  }
   float sum = 0.0;
   char* endptr;
 
@@ -52,54 +61,39 @@ int main(int argc, char** argv) {
   // int shm_fd;
 
   // // Открытие существующей разделяемой памяти
-  // if ((shm_fd = shm_open(SHM_NAME, O_RDONLY, 0444)) == -1) {
+  // if ((shm_fd = shm_open("FileSHM", O_RDONLY, 0444)) == -1) {
   //   perror("shm_open");
   //   const char msg[] = "error: shm_open child\n";
   //   write(STDERR_FILENO, msg, sizeof(msg));
   //   exit(EXIT_FAILURE);
   // }
 
-  // // Отображение разделяемой памяти
-  // char* ptr = mmap(0, SIZE, PROT_READ, MAP_SHARED, shm_fd, 0);
+  // // // Отображение разделяемой памяти
+  char* src = mmap(0, SIZE, PROT_READ, MAP_SHARED, shm_fd, 0);
 
-  // // Чтение из разделяемой памяти
-  // printf("Data from shared memory: %s\n", ptr);
+  // Чтение из разделяемой памяти
+  printf("Data from shared memory: %s\n", src);
 
-  // // Закрытие разделяемой памяти
-  // munmap(ptr, SIZE);
+  // Закрытие разделяемой памяти
+  // munmap(src, SIZE);
 
   // pid_t pid = getpid();
 
-  while ((bytes = read(STDIN_FILENO, buf, sizeof(buf)))) {
-    if (bytes < 0) {
-      const char msg[] = "error: failed to read from stdin\n";
+  {
+    char out_buf[1024];
+    out_buf[0] = '\0';
+    float_t sum = summ(src);
+    sprintf(out_buf, "%f", sum);
+    int32_t written = write(STDOUT_FILENO, out_buf, strlen(out_buf));
+    if (written == -1) {
+      const char msg[] = "error: failed to write to out buffer\n";
       write(STDERR_FILENO, msg, sizeof(msg));
       exit(EXIT_FAILURE);
-    } else if (buf[0] == '\n') {
-      // проверка на дурака + конец ввода
-      break;
     }
-
-    {
-      // заменяем лишним пробел окончанием строки и получаем готовую строчечку
-      buf[bytes - 1] = '\0';
-    }
-
-    {
-      char out_buf[1024];
-      out_buf[0] = '\0';
-      float_t sum = summ(buf);
-      sprintf(out_buf, "%f", sum);
-      int32_t written = write(STDOUT_FILENO, out_buf, strlen(out_buf));
-      if (written == -1) {
-        const char msg[] = "error: failed to write to out buffer\n";
-        write(STDERR_FILENO, msg, sizeof(msg));
-        exit(EXIT_FAILURE);
-      }
-    }
-
-    // TODO: Check for count of actual bytes written
-    const char term = '\0';
-    write(STDOUT_FILENO, &term, sizeof(term));
   }
+
+  // TODO: Check for count of actual bytes written
+  const char term = '\0';
+  write(STDOUT_FILENO, &term, sizeof(term));
+  exit(EXIT_SUCCESS);
 }

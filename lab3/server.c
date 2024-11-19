@@ -34,7 +34,7 @@ int main(int argc, char** argv) {
   }
 
   // хде я?
-  char progpath[1024];
+  char progpath[1024] = {0};
   {
     // собственно узнаем где
     ssize_t len = readlink("/proc/self/exe", progpath, sizeof(progpath) - 1);

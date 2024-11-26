@@ -148,7 +148,7 @@ int main(int argc, char** argv) {
         exit(EXIT_FAILURE);
       }
 
-      _print(SUCCESS, "%s\n", res);
+      _print(SUCCESS, "res=%s\n", res);
 
       if (child_status != EXIT_SUCCESS) {
         const char msg[] = "error: child exited with error\n";

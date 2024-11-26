@@ -120,6 +120,4 @@ int main(int argc, char** argv) {
       }
     } break;
   }
-
-  // shm_unlink(SHM_NAME);
 }

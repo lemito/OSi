@@ -59,8 +59,6 @@ int main(int argc, char** argv) {
     case 0: {  // Я - ребенок и не знаю свой PID
       // собственно узнаю
 
-      void* src;
-
       /* файл*/
       int file = open(argv[1], O_RDONLY);
       if (file == -1) {

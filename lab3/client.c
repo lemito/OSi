@@ -55,34 +55,14 @@ float summ(const char* src) {
 }
 
 int main(int argc, char** argv) {
+  printf("client started\n");
   char buf[4096];
   ssize_t bytes;
-
-  // int shm_fd;
-
-  // // Открытие существующей разделяемой памяти
-  // if ((shm_fd = shm_open("FileSHM", O_RDONLY, 0444)) == -1) {
-  //   perror("shm_open");
-  //   const char msg[] = "error: shm_open child\n";
-  //   write(STDERR_FILENO, msg, sizeof(msg));
-  //   exit(EXIT_FAILURE);
-  // }
-
-  // // // Отображение разделяемой памяти
-  char* src = mmap(0, SIZE, PROT_READ, MAP_SHARED, shm_fd, 0);
-
-  // Чтение из разделяемой памяти
-  printf("Data from shared memory: %s\n", src);
-
-  // Закрытие разделяемой памяти
-  // munmap(src, SIZE);
-
-  // pid_t pid = getpid();
 
   {
     char out_buf[1024];
     out_buf[0] = '\0';
-    float_t sum = summ(src);
+    float_t sum = summ(buf);
     sprintf(out_buf, "%f", sum);
     int32_t written = write(STDOUT_FILENO, out_buf, strlen(out_buf));
     if (written == -1) {
@@ -93,7 +73,7 @@ int main(int argc, char** argv) {
   }
 
   // TODO: Check for count of actual bytes written
-  const char term = '\0';
-  write(STDOUT_FILENO, &term, sizeof(term));
+  // const char term = '\0';
+  // write(STDOUT_FILENO, &term, sizeof(term));
   exit(EXIT_SUCCESS);
 }

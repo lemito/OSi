@@ -17,13 +17,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-// #include <bits/mman-linux.h>
 #include <sys/mman.h>
+#include <unistd.h>
 
 #include "pool.h"
 
-#define SIZE BUFSIZ
+// extern int FILE_SIZE;
 
 float summ(const char* src) {
   if (src == NULL) {
@@ -55,25 +54,57 @@ float summ(const char* src) {
 }
 
 int main(int argc, char** argv) {
-  printf("client started\n");
-  char buf[4096];
-  ssize_t bytes;
-
-  {
-    char out_buf[1024];
-    out_buf[0] = '\0';
-    float_t sum = summ(buf);
-    sprintf(out_buf, "%f", sum);
-    int32_t written = write(STDOUT_FILENO, out_buf, strlen(out_buf));
-    if (written == -1) {
-      const char msg[] = "error: failed to write to out buffer\n";
-      write(STDERR_FILENO, msg, sizeof(msg));
-      exit(EXIT_FAILURE);
-    }
+  /* возврат размера файла */
+  int tmp = shm_open("/file_size_shm\0", O_RDWR, 0666);
+  if (tmp == -1) {
+    _print(ERROR, "%s: open failed child\n", "/file_size_shm\0");
+    exit(EXIT_FAILURE);
+  }
+  int* shared_variable = mmap(0, sizeof(int), PROT_READ, MAP_SHARED, tmp, 0);
+  if (shared_variable == MAP_FAILED) {
+    _print(ERROR, "%s: mapping failed child\n", "/file_size_shm\0");
+    exit(EXIT_FAILURE);
   }
 
-  // TODO: Check for count of actual bytes written
-  // const char term = '\0';
-  // write(STDOUT_FILENO, &term, sizeof(term));
+  int FILE_SIZE = *shared_variable;
+
+  destroy_mmap_int(shared_variable, "/file_size_shm\0");
+  /*=========================*/
+  /* работа с файлом (входной поток) */
+  int shm_fd;
+  if ((shm_fd = shm_open(SHM_NAME, O_RDONLY, 0666)) == -1) {
+    _print(ERROR, "error: shm_open child\n");
+    exit(EXIT_FAILURE);
+  }
+
+  char* src = mmap(0, FILE_SIZE, PROT_READ, MAP_SHARED, shm_fd, 0);
+  if (src == MAP_FAILED) {
+    _print(ERROR, "%s: mapping failed child\n", SHM_NAME);
+    exit(EXIT_FAILURE);
+  }
+
+  float sum = summ(src);
+  /*=========================*/
+  /* запись в результативную память */
+  int res_fd;
+  if ((res_fd = shm_open(RES_SHM, O_CREAT | O_RDWR, 0666)) == -1) {
+    _print(ERROR, "error: shm_open child\n");
+    exit(EXIT_FAILURE);
+  }
+
+  ftruncate(res_fd, BUFSIZ);
+
+  void* ressrc = mmap(0, BUFSIZ, PROT_READ | PROT_WRITE, MAP_SHARED, res_fd, 0);
+  if (ressrc == MAP_FAILED) {
+    perror("mmap");
+    exit(EXIT_FAILURE);
+  }
+
+  sprintf(ressrc, "%f", sum);
+  /*=========================*/
+  munmap(src, FILE_SIZE);
+  munmap(ressrc, BUFSIZ);
+  close(shm_fd);
+  close(res_fd);
   exit(EXIT_SUCCESS);
 }

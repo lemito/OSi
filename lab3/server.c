@@ -8,6 +8,8 @@
  * @copyright Copyright (c) 2024
  *
  */
+#include "pool.h"
+
 #include <fcntl.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -20,12 +22,10 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#include "pool.h"
-
 static char CLIENT_PROGRAM_NAME[] = "client";
 
 int main(int argc, char** argv) {
-  if (argc == 1) {
+  if (argc != 2) {
     _print(ERROR, "usage: %s filename\n", argv[0]);
     exit(EXIT_FAILURE);
   }
@@ -57,7 +57,7 @@ int main(int argc, char** argv) {
     } break;
 
     case 0: {  // Я - ребенок и не знаю свой PID
-      // собственно узнаю
+               // собственно узнаю
 
       /* файл*/
       int file = open(argv[1], O_RDONLY);
@@ -72,6 +72,37 @@ int main(int argc, char** argv) {
         write(STDERR_FILENO, msg, sizeof(msg));
         exit(EXIT_FAILURE);
       }
+
+      int shm_fd = shm_open(SHM_NAME, O_CREAT | O_RDWR, 0666);
+      if (shm_fd == -1) {
+        _print(ERROR, "%s: open failed\n", SHM_NAME);
+        exit(EXIT_FAILURE);
+      }
+
+      // укорачиваем файла строго до определенной длины
+      if (ftruncate(shm_fd, file_stat.st_size) == -1) {
+        _print(ERROR, "%s: ftruncate failed\n", SHM_NAME);
+        close(shm_fd);
+        shm_unlink(SHM_NAME);
+        exit(EXIT_FAILURE);
+      }
+
+      char* src = mmap(NULL, file_stat.st_size, PROT_READ | PROT_WRITE,
+                       MAP_SHARED, shm_fd, 0);
+      if (src == MAP_FAILED) {
+        _print(ERROR, "%s: mapping failed\n", SHM_NAME);
+        close(shm_fd);
+        shm_unlink(SHM_NAME);
+        exit(EXIT_FAILURE);
+      }
+
+      // char buf[BUFSIZ];
+      read(file, src, file_stat.st_size);
+      // strcpy(buf, src);
+      // fprintf(stdout, "%s\n", buf);
+      int* FILE_SIZE = create_mmap_int("/file_size_shm\0");
+
+      *FILE_SIZE = file_stat.st_size;
 
       {
         char path[1024];
@@ -104,18 +135,31 @@ int main(int argc, char** argv) {
 
       // чтение ответа
       int shm_fd;
-      if ((shm_fd = shm_open(SHM_NAME, O_RDONLY, 0444)) == -1) {
-        perror("meow");
-        const char msg[] = "error: shm_open parrent\n";
-        write(STDERR_FILENO, msg, sizeof(msg));
+      if ((shm_fd = shm_open(RES_SHM, O_RDONLY, 0666)) == -1) {
+        _print(ERROR, "error: shm_open parrent\n");
         exit(EXIT_FAILURE);
       }
+      ftruncate(shm_fd, BUFSIZ);
+
+      char* res;
+      if ((res = mmap(0, BUFSIZ, PROT_READ, MAP_SHARED, shm_fd, 0)) ==
+          MAP_FAILED) {
+        _print(ERROR, "error: res mmap parrent\n");
+        exit(EXIT_FAILURE);
+      }
+
+      _print(SUCCESS, "%s\n", res);
 
       if (child_status != EXIT_SUCCESS) {
         const char msg[] = "error: child exited with error\n";
         write(STDERR_FILENO, msg, sizeof(msg));
+        perror("");
         exit(child_status);
       }
+
+      close(shm_fd);
+      shm_unlink(SHM_NAME);
+      shm_unlink(RES_SHM);
     } break;
   }
 }

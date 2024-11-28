@@ -95,7 +95,6 @@ int main(int argc, char** argv) {
         shm_unlink(SHM_NAME);
         exit(EXIT_FAILURE);
       }
-
       // char buf[BUFSIZ];
       read(file, src, file_stat.st_size);
       // strcpy(buf, src);
@@ -103,7 +102,7 @@ int main(int argc, char** argv) {
       int* FILE_SIZE = create_mmap_int("/file_size_shm\0");
 
       *FILE_SIZE = file_stat.st_size;
-
+      close(file);
       {
         char path[1024];
         snprintf(path, sizeof(path) - 1, "%s/%s", progpath,

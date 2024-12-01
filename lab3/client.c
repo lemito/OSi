@@ -54,6 +54,9 @@ float summ(const char* src) {
 }
 
 int main(int argc, char** argv) {
+  /* Получение сигнала о том, что записано */
+  sem_t* sem_parent_ready = sem_open(SEM_PARENT_READY, 0);
+  sem_wait(sem_parent_ready);
   /* возврат размера файла */
   int tmp = shm_open("/file_size_shm\0", O_RDWR, 0666);
   if (tmp == -1) {
@@ -100,10 +103,13 @@ int main(int argc, char** argv) {
     exit(EXIT_FAILURE);
   }
 
-  if (1 != sprintf(ressrc, "%f", sum)) {
+  if (0 == sprintf(ressrc, "%f", sum)) {
     perror("write result");
     exit(EXIT_FAILURE);
   }
+  /* уведомление о готовности результата */
+  sem_t* sem_child_ready = sem_open(SEM_CHILD_READY, O_CREAT, 0666, 0);
+  sem_post(sem_child_ready);
   /*=========================*/
   if (-1 == munmap(src, FILE_SIZE)) {
     perror("munmap");
@@ -115,5 +121,6 @@ int main(int argc, char** argv) {
   }
   close(shm_fd);
   close(res_fd);
+  sem_close(sem_parent_ready);
   exit(EXIT_SUCCESS);
 }

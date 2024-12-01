@@ -103,6 +103,15 @@ int main(int argc, char** argv) {
 
       *FILE_SIZE = file_stat.st_size;
       close(file);
+
+      /* говорим о готовности входного потока */
+      sem_t* sem_parent_ready = sem_open(SEM_PARENT_READY, O_CREAT, 0666, 0);
+      if (sem_parent_ready == SEM_FAILED) {
+        perror("sem_open parent");
+        exit(EXIT_FAILURE);
+      }
+      sem_post(sem_parent_ready);
+
       {
         char path[1024];
         snprintf(path, sizeof(path) - 1, "%s/%s", progpath,
@@ -132,10 +141,19 @@ int main(int argc, char** argv) {
       int child_status;
       wait(&child_status);
 
+      sem_t* sem_child_ready = sem_open(SEM_CHILD_READY, 0);
+      sem_wait(sem_child_ready);
+
       // чтение ответа
       int shm_fd;
       if ((shm_fd = shm_open(RES_SHM, O_RDONLY, 0666)) == -1) {
         _print(ERROR, "error: shm_open parrent\n");
+        // close(shm_fd);
+        // shm_unlink(SHM_NAME);
+        // shm_unlink(RES_SHM);
+        sem_unlink(SEM_PARENT_READY);
+        sem_unlink(SEM_CHILD_READY);
+        sem_close(sem_child_ready);
         exit(EXIT_FAILURE);
       }
       ftruncate(shm_fd, BUFSIZ);
@@ -144,6 +162,12 @@ int main(int argc, char** argv) {
       if ((res = mmap(0, BUFSIZ, PROT_READ, MAP_SHARED, shm_fd, 0)) ==
           MAP_FAILED) {
         _print(ERROR, "error: res mmap parrent\n");
+        close(shm_fd);
+        shm_unlink(SHM_NAME);
+        shm_unlink(RES_SHM);
+        sem_unlink(SEM_PARENT_READY);
+        sem_unlink(SEM_CHILD_READY);
+        sem_close(sem_child_ready);
         exit(EXIT_FAILURE);
       }
 
@@ -153,12 +177,21 @@ int main(int argc, char** argv) {
         const char msg[] = "error: child exited with error\n";
         write(STDERR_FILENO, msg, sizeof(msg));
         perror("");
+        close(shm_fd);
+        shm_unlink(SHM_NAME);
+        shm_unlink(RES_SHM);
+        sem_unlink(SEM_PARENT_READY);
+        sem_unlink(SEM_CHILD_READY);
+        sem_close(sem_child_ready);
         exit(child_status);
       }
 
       close(shm_fd);
       shm_unlink(SHM_NAME);
       shm_unlink(RES_SHM);
+      sem_unlink(SEM_PARENT_READY);
+      sem_unlink(SEM_CHILD_READY);
+      sem_close(sem_child_ready);
     } break;
   }
 }

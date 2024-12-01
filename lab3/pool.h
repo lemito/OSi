@@ -4,12 +4,15 @@ extern int FILE_SIZE;
 #pragma once
 
 #include <fcntl.h>
+#include <semaphore.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/mman.h>
 #include <unistd.h>
 
+#define SEM_PARENT_READY "/sem_parent_ready"
+#define SEM_CHILD_READY "/sem_child_ready"
 #define SHM_NAME "/fileshm\0"
 #define RES_SHM "/resshm\0"
 

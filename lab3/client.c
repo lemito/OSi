@@ -100,10 +100,19 @@ int main(int argc, char** argv) {
     exit(EXIT_FAILURE);
   }
 
-  sprintf(ressrc, "%f", sum);
+  if (1 != sprintf(ressrc, "%f", sum)) {
+    perror("write result");
+    exit(EXIT_FAILURE);
+  }
   /*=========================*/
-  munmap(src, FILE_SIZE);
-  munmap(ressrc, BUFSIZ);
+  if (-1 == munmap(src, FILE_SIZE)) {
+    perror("munmap");
+    exit(EXIT_FAILURE);
+  }
+  if (-1 == munmap(ressrc, BUFSIZ)) {
+    perror("munmap");
+    exit(EXIT_FAILURE);
+  }
   close(shm_fd);
   close(res_fd);
   exit(EXIT_SUCCESS);

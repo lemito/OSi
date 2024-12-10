@@ -5,8 +5,7 @@
 #include <dlfcn.h>  // dlopen, dlsym, dlclose, RTLD_*
 #include <unistd.h> // write
 
-#include "blocks2n.h"
-#include "buddys.h"
+#include "main.h"
 
 // static fabsf_func *fabsf;
 // static cosf_func *cosf;
@@ -24,6 +23,7 @@ int main(int argc, char **argv) {
 
   void *library = dlopen(argv[1], RTLD_LOCAL | RTLD_NOW);
 
+  /* библиотека смогла открыться */
   if (argc > 1 && library != NULL) {
     // fabsf = dlsym(library, "fabsf");
     // if (fabsf == NULL) {
@@ -40,7 +40,10 @@ int main(int argc, char **argv) {
     //   write(STDERR_FILENO, msg, sizeof(msg));
     //   cosf = func_impl_stub;
     // }
-  } else {
+  }
+  /* ==================================== */
+  /* испольхование стандартной библиотеки */
+  else {
     const char msg[] =
         "warning: library failed to load, trying standard implemntations\n";
     write(STDERR_FILENO, msg, sizeof(msg));
@@ -57,6 +60,7 @@ int main(int argc, char **argv) {
     // cosf = dlsym(library, "cosf");
   }
 
+  /* сами действие */
   {
     const float x = -3.14159f;
     const float y = fabsf(x);
@@ -78,8 +82,10 @@ int main(int argc, char **argv) {
     buf[length] = '\0';
     write(STDOUT_FILENO, buf, length);
   }
-
+  /* ==================================== */
+  /* Отключение библиотек при наличии */
   if (library) {
     dlclose(library);
   }
+  /* ==================================== */
 }

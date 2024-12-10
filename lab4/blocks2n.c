@@ -1,4 +1,4 @@
-#include "blocks2n.h"
+#include "main.h"
 
 // NOTE: MSVC compiler does not export symbols unless annotated
 #ifdef _MSC_VER

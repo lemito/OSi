@@ -96,7 +96,12 @@ int main(int argc, char** argv) {
         exit(EXIT_FAILURE);
       }
       // char buf[BUFSIZ];
-      read(file, src, file_stat.st_size);
+      if (-1 == read(file, src, file_stat.st_size)) {
+        _print(ERROR, "read failed\n", SHM_NAME);
+        close(shm_fd);
+        shm_unlink(SHM_NAME);
+        exit(EXIT_FAILURE);
+      }
       // strcpy(buf, src);
       // fprintf(stdout, "%s\n", buf);
       int* FILE_SIZE = create_mmap_int("/file_size_shm\0");
@@ -107,10 +112,16 @@ int main(int argc, char** argv) {
       /* говорим о готовности входного потока */
       sem_t* sem_parent_ready = sem_open(SEM_PARENT_READY, O_CREAT, 0666, 0);
       if (sem_parent_ready == SEM_FAILED) {
-        perror("sem_open parent");
+        _print(ERROR, "sem open failed\n", SHM_NAME);
         exit(EXIT_FAILURE);
       }
-      sem_post(sem_parent_ready);
+      // +1 в семафор; т.е. можно есть
+      if (-1 == sem_post(sem_parent_ready)) {
+        _print(ERROR, "sem_post failed\n", SHM_NAME);
+        close(shm_fd);
+        shm_unlink(SHM_NAME);
+        exit(EXIT_FAILURE);
+      }
 
       {
         char path[1024];
@@ -142,7 +153,16 @@ int main(int argc, char** argv) {
       wait(&child_status);
 
       sem_t* sem_child_ready = sem_open(SEM_CHILD_READY, 0);
-      sem_wait(sem_child_ready);
+      if (sem_child_ready == SEM_FAILED) {
+        _print(ERROR, "sem_child_ready open failed\n", SHM_NAME);
+        exit(EXIT_FAILURE);
+      }
+      // -1 от семафора => если 0 - блокнут и нельзя ничего делать кроме как
+      // ждать
+      if (-1 == sem_wait(sem_child_ready)) {
+        _print(ERROR, "sem_child_ready wait failed\n", SHM_NAME);
+        exit(EXIT_FAILURE);
+      }
 
       // чтение ответа
       int shm_fd;

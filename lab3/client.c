@@ -56,7 +56,16 @@ float summ(const char* src) {
 int main(int argc, char** argv) {
   /* Получение сигнала о том, что записано */
   sem_t* sem_parent_ready = sem_open(SEM_PARENT_READY, 0);
-  sem_wait(sem_parent_ready);
+  if (sem_parent_ready == SEM_FAILED) {
+    _print(ERROR, "sem_parent_ready open failed\n", SHM_NAME);
+    exit(EXIT_FAILURE);
+  }
+  // -1 от семафора => если 0 - блокнут и нельзя ничего делать кроме как
+  // ждать
+  if (-1 == sem_wait(sem_parent_ready)) {
+    _print(ERROR, "sem_parent_ready wait failed\n", SHM_NAME);
+    exit(EXIT_FAILURE);
+  }
   /* возврат размера файла */
   int tmp = shm_open("/file_size_shm\0", O_RDWR, 0666);
   if (tmp == -1) {
@@ -109,7 +118,15 @@ int main(int argc, char** argv) {
   }
   /* уведомление о готовности результата */
   sem_t* sem_child_ready = sem_open(SEM_CHILD_READY, O_CREAT, 0666, 0);
-  sem_post(sem_child_ready);
+  if (sem_child_ready == SEM_FAILED) {
+    _print(ERROR, "sem_child_ready open failed\n", SHM_NAME);
+    exit(EXIT_FAILURE);
+  }
+  // +1 в семафор; т.е. можно есть
+  if (-1 == sem_post(sem_child_ready)) {
+    _print(ERROR, "sem_child_ready post failed\n", SHM_NAME);
+    exit(EXIT_FAILURE);
+  }
   /*=========================*/
   if (-1 == munmap(src, FILE_SIZE)) {
     perror("munmap");

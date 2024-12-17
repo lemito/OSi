@@ -20,12 +20,18 @@ typedef struct BuddyAllocator {
 EXPORT Allocator *allocator_create(void *const memory, const size_t size) {
   if (memory == NULL) return NULL;
   if (size < 16) return NULL;
-  BuddyAllocator *allocator = (BuddyAllocator *)memory;
+  // BuddyAllocator *allocator = (BuddyAllocator *)memory;
+  BuddyAllocator *allocator =
+      mmap(NULL, sizeof(BuddyAllocator), PROT_READ | PROT_WRITE,
+           MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+  if (allocator == MAP_FAILED) {
+    return NULL;
+  }
   // Устанавливаем параметры
   allocator->total_size = size;
   allocator->block_size = PAGE_SIZE;
-  allocator->memory = (void *)((uintptr_t)memory + sizeof(BuddyAllocator));
-
+  // allocator->memory = (void *)((uintptr_t)memory + sizeof(BuddyAllocator));
+  allocator->memory = memory;
   // Определяем количество блоков
   allocator->num_blocks = size / PAGE_SIZE;
 

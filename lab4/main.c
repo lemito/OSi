@@ -102,21 +102,28 @@ int main(int argc, char** argv) {
 
   /* сами действие */
   {
-    printf("mem create");
-    void* memory = mmap(NULL, 40960, PROT_READ | PROT_WRITE,
-                        MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-    printf("meow create");
-    Allocator* const meow = allocator_create(memory, 128);
-    printf("meow alloc");
-    memory = allocator_alloc(meow, 64);
-    printf("mem == 52\n");
-    *(int*)meow->data = 52;
-    printf("meow == %d %d size == %zu and mem free\n", *(int*)memory,
-           *(int*)meow->data, meow->size);
-    allocator_free(meow, memory);
-    printf("mem destroy");
-    allocator_destroy(meow);
-    munmap(memory, 40960);
+    size_t SIZE = 1024 * 1024;
+    void* memory = mmap(NULL, SIZE, PROT_READ | PROT_WRITE,
+                        MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+    if (memory == MAP_FAILED) {
+      perror("mmap failed");
+      return 1;
+    }
+
+    Allocator* allocator = allocator_create(memory, SIZE);
+
+    void* block1 = allocator_alloc(allocator, 1024); 
+    void* block2 = allocator_alloc(allocator, 2048);  
+
+    printf("Алоцированный блок 1 живет по адресу %p\n", block1);
+    printf("Алоцированный блок 1 живет по адресу %p\n", block2);
+
+    allocator_free(allocator, block1);
+    allocator_free(allocator, block2);
+
+    printf("Очищено\n");
+
+    allocator_destroy(allocator);
   }
 
   /* ==================================== */

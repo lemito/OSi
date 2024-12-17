@@ -4,12 +4,13 @@
 #include <math.h>
 #include <stdarg.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 #include <sys/mman.h>
 #include <unistd.h>
 
 #define BUFSIZ 8192
-typedef enum STATES { LOG, ERROR } STATES;
+typedef enum STATES { LOG_s, ERROR_s } STATES;
 
 int _print(char mode, char *fmt, ...) {
   if (fmt == NULL) {
@@ -19,10 +20,13 @@ int _print(char mode, char *fmt, ...) {
   va_start(vargs, fmt);
   char msg[BUFSIZ];
   vsprintf(msg, fmt, vargs);
-  write(mode == ERROR ? STDERR_FILENO : STDOUT_FILENO, msg, strlen(msg));
+  write(mode == ERROR_s ? STDERR_FILENO : STDOUT_FILENO, msg, strlen(msg));
   va_end(vargs);
   return 0;
 }
+
+#define LOG(fmt, ...) _print(LOG_s, fmt, ##__VA_ARGS__)
+#define ERROR(fmt, ...) _print(ERROR_s, fmt, ##__VA_ARGS__)
 
 typedef struct Allocator {
   size_t total_size;

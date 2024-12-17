@@ -2,7 +2,6 @@
 
 #include <dlfcn.h>  // dlopen, dlsym, dlclose, RTLD_*
 #include <stddef.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <sys/mman.h>
 #include <unistd.h>  // write
@@ -44,10 +43,10 @@ static void func_impl_stub4(struct Allocator* const alloc, void* const mem) {
 
 int main(int argc, char** argv) {
   (void)argc;
-  printf("mem create");
+  LOG("mem create");
 
   // void* library = dlopen(argv[1], RTLD_LOCAL | RTLD_NOW);
-  void* library = dlopen("./buddys.so", RTLD_LOCAL | RTLD_NOW);
+  void* library = dlopen("./blocks2n.so", RTLD_LOCAL | RTLD_NOW);
   argc++;
   /* библиотека смогла открыться */
   if (argc > 1 && library != NULL) {
@@ -104,6 +103,7 @@ int main(int argc, char** argv) {
 
   /* сами действие */
   {
+    LOG("Создаем memory\n");
     void* memory = mmap(NULL, SIZE, PROT_READ | PROT_WRITE,
                         MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
     if (memory == MAP_FAILED) {
@@ -111,20 +111,22 @@ int main(int argc, char** argv) {
       return 1;
     }
 
+    LOG("Создаем аллокатор\n");
     Allocator* allocator = allocator_create(memory, SIZE);
 
-    void* block1 = allocator_alloc(allocator, 1024); 
-    void* block2 = allocator_alloc(allocator, 2048);  
+    LOG("Аллоцируем\n");
+    void* block1 = allocator_alloc(allocator, 1024);
+    void* block2 = allocator_alloc(allocator, 2048);
 
-    printf("Алоцированный блок 1 живет по адресу %p\n", block1);
-    printf("Алоцированный блок 1 живет по адресу %p\n", block2);
+    LOG("Алоцированный блок 1 живет по адресу %p\n", block1);
+    LOG("Алоцированный блок 1 живет по адресу %p\n", block2);
 
     allocator_free(allocator, block1);
     allocator_free(allocator, block2);
 
-    printf("Очищено\n");
-
+    LOG("Очищено\n");
     allocator_destroy(allocator);
+
     munmap(memory, SIZE);
   }
 

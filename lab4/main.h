@@ -42,4 +42,32 @@ typedef void *allocator_alloc_f(Allocator *const allocator, const size_t size);
 // возвращает выделенную память аллокатору
 typedef void allocator_free_f(Allocator *const allocator, void *const memory);
 
+/* блок замененок */
+Allocator *allocator_create_extra(void *const memory, const size_t size) {
+  if (memory == NULL || size == 0) {
+    return NULL;
+  }
+  Allocator *allocator = mmap(NULL, sizeof(Allocator), PROT_READ | PROT_WRITE,
+                              MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+  if (allocator == MAP_FAILED) {
+    return NULL;
+  }
+
+  allocator->data = memory;
+  allocator->total_size = size;
+
+  return allocator;
+}
+void allocator_destroy_extra(Allocator *const allocator) {
+  if (allocator == NULL) {
+    return;
+  }
+  allocator->total_size = 0;
+  munmap(allocator, sizeof(Allocator));
+  allocator->data = NULL;
+}
+void *allocator_alloc_extra(Allocator *const allocator, const size_t size) {}
+void allocator_free_extra(Allocator *const allocator, void *const memory) {}
+/**/
+
 #endif  // __BUDDYS_H

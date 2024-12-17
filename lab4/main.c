@@ -104,27 +104,21 @@ int main(int argc, char** argv) {
   {
     printf("mem create");
     void* memory = mmap(NULL, 40960, PROT_READ | PROT_WRITE,
-                              MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+                        MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     printf("meow create");
     Allocator* const meow = allocator_create(memory, 128);
     printf("meow alloc");
     memory = allocator_alloc(meow, 64);
-    printf("mem == 52");
-    *(int*)memory = 52;
-    printf("meow == %d %d and mem free", *(int*)memory, *(int*)meow->data);
+    printf("mem == 52\n");
+    *(int*)meow->data = 52;
+    printf("meow == %d %d size == %zu and mem free\n", *(int*)memory,
+           *(int*)meow->data, meow->size);
     allocator_free(meow, memory);
     printf("mem destroy");
     allocator_destroy(meow);
     munmap(memory, 40960);
   }
 
-  {
-    char buf[1024];
-    int length =
-        snprintf(buf, sizeof(buf) - 1, "Cosine of %f is %.10f\n", 1, 2);
-    buf[length] = '\0';
-    write(STDOUT_FILENO, buf, length);
-  }
   /* ==================================== */
   /* Отключение библиотек при наличии */
   if (library) {

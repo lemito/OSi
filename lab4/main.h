@@ -2,10 +2,12 @@
 #define __BUDDYS_H
 
 #include <math.h>
+#include <stdint.h>
 #include <string.h>
 #include <unistd.h>
+
 typedef struct Allocator {
-  size_t size;
+  size_t total_size;
   void *data;
 } Allocator;
 

@@ -7,49 +7,95 @@
 #define EXPORT
 #endif
 
+#define PAGE_SIZE 4096
+
 typedef struct BuddyAllocator {
   size_t total_size;  // общий размер
   void *memory;       // начало памяти
-  size_t min_block_size;  // размер наименьшего блока памяти
-  unsigned int levels;    // уровни (log2N)
-  unsigned char *bitmap;  // битмап свободных
+  size_t block_size;  // размер блока памяти
+  size_t num_blocks;  // Общее количество блоков
+  uint8_t *bitmap;  // Битовая карта для отслеживания свободных/занятых блоков
 } BuddyAllocator;
 
 EXPORT Allocator *allocator_create(void *const memory, const size_t size) {
   if (memory == NULL) return NULL;
   if (size < 16) return NULL;
   BuddyAllocator *allocator = (BuddyAllocator *)memory;
+  // Устанавливаем параметры
   allocator->total_size = size;
-  allocator->memory = (void *)((char *)memory + sizeof(BuddyAllocator));
-  allocator->min_block_size = 16;
-  allocator->levels = (unsigned int)log2(size / allocator->min_block_size);
-  allocator->bitmap = (unsigned char *)((char *)allocator->memory + size);
-  memset(allocator->bitmap, 0, (1 << allocator->levels) - 1);
+  allocator->block_size = PAGE_SIZE;
+  allocator->memory = (void *)((uintptr_t)memory + sizeof(BuddyAllocator));
+
+  // Определяем количество блоков
+  allocator->num_blocks = size / PAGE_SIZE;
+
+  // bitmap = 1bit/block
+  size_t bitmap_size = (allocator->num_blocks + 7) / 8;
+  allocator->bitmap = (uint8_t *)((uintptr_t)allocator->memory + size);
+
+  memset(allocator->bitmap, 0, bitmap_size);
+
   return (Allocator *)allocator;
 }
 
 EXPORT void allocator_destroy(Allocator *const allocator) {
   if (allocator == NULL) return;
-  allocator->size = 0;
+  allocator->total_size = 0;
+  munmap(allocator, allocator->total_size);
   allocator->data = NULL;
   return;
 }
 
 EXPORT void *allocator_alloc(Allocator *const allocator, const size_t size) {
   if (!allocator || size == 0) return NULL;
-
   BuddyAllocator *b_allocator = (BuddyAllocator *)allocator;
+
+  size_t block_size = b_allocator->block_size;
+  while (block_size < size) {
+    block_size *= 2;  // делаем кратным 2
+  }
+
   if (size > b_allocator->total_size) return NULL;
 
-  void *alloc_ptr = b_allocator->memory;
-  b_allocator->memory = (void *)((char *)b_allocator->memory + size);
-  b_allocator->total_size -= size;
-  return alloc_ptr;
+  // блоки подходящего размера (их поиск с помощью битовой карты)
+  for (size_t i = 0; i < b_allocator->num_blocks; i++) {
+    size_t byte_index = i / 8;
+    size_t bit_index = i % 8;
+
+    if (!(b_allocator->bitmap[byte_index] & (1 << bit_index))) {
+      // Если блок свободен, метим его как занятый
+      b_allocator->bitmap[byte_index] |= (1 << bit_index);
+      return (void *)((uintptr_t)b_allocator->memory + i * block_size);
+    }
+  }
+
+  return NULL;
 }
 
 EXPORT void allocator_free(Allocator *const allocator, void *const memory) {
   if (memory == NULL || allocator == NULL) return;
-  (void)allocator;
-  (void)memory;
+  BuddyAllocator *b_allocator = (BuddyAllocator *)allocator;
+
+  uintptr_t offset = (uintptr_t)memory - (uintptr_t)b_allocator->memory;
+  size_t block_index = offset / b_allocator->block_size;
+
+  // ищем занятого чела
+  size_t byte_index = block_index / 8;
+  size_t bit_index = block_index % 8;
+
+  b_allocator->bitmap[byte_index] &= ~(1 << bit_index);  // освобождаем
+
+  // ищем поизиции друга
+  size_t buddy_index = block_index ^ 1;
+
+  // Если соседний блок тоже свободен, сливаем два блока
+  if (!(b_allocator->bitmap[buddy_index / 8] & (1 << (buddy_index % 8)))) {
+    b_allocator->bitmap[block_index / 8] &= ~(1 << (block_index % 8));
+    b_allocator->bitmap[buddy_index / 8] &= ~(1 << (buddy_index % 8));
+
+    // Сливаем два блока в один
+    block_index = block_index / 2;
+  }
+
   return;
 }

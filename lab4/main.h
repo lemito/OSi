@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/mman.h>
 
 typedef struct Allocator {
   size_t total_size;

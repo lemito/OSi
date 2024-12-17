@@ -7,6 +7,8 @@
 #include <sys/mman.h>
 #include <unistd.h>  // write
 
+#define SIZE (1024 * 1024)
+
 static allocator_create_f* allocator_create;
 static allocator_destroy_f* allocator_destroy;
 static allocator_alloc_f* allocator_alloc;
@@ -102,7 +104,6 @@ int main(int argc, char** argv) {
 
   /* сами действие */
   {
-    size_t SIZE = 1024 * 1024;
     void* memory = mmap(NULL, SIZE, PROT_READ | PROT_WRITE,
                         MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
     if (memory == MAP_FAILED) {
@@ -124,6 +125,7 @@ int main(int argc, char** argv) {
     printf("Очищено\n");
 
     allocator_destroy(allocator);
+    munmap(memory, SIZE);
   }
 
   /* ==================================== */

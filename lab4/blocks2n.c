@@ -18,11 +18,11 @@ typedef struct BlockHeader {
   struct BlockHeader *next;
 } BlockHeader;
 
-typedef struct Allocator {
-  void *memory;
-  size_t total_size;
+typedef struct p2Alloc {
+  void *memory;       // сама память
+  size_t total_size;  // размер
   BlockHeader *free_lists[32];  // массив списков свободных блоков
-} Allocator;
+} p2Alloc;
 
 // узнаем размер блока
 size_t get_block_size(size_t size) {
@@ -48,8 +48,8 @@ EXPORT Allocator *allocator_create(void *const memory, const size_t size) {
     return NULL;
   }
 
-  Allocator *allocator = mmap(NULL, sizeof(Allocator), PROT_READ | PROT_WRITE,
-                              MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+  p2Alloc *allocator = mmap(NULL, sizeof(p2Alloc), PROT_READ | PROT_WRITE,
+                            MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
   if (allocator == MAP_FAILED) {
     return NULL;
   }
@@ -58,7 +58,7 @@ EXPORT Allocator *allocator_create(void *const memory, const size_t size) {
   allocator->total_size = size;
   memset(allocator->free_lists, 0, sizeof(allocator->free_lists));
 
-  return allocator;
+  return (Allocator *)allocator;
 }
 
 EXPORT void allocator_destroy(Allocator *const allocator) {
@@ -66,7 +66,8 @@ EXPORT void allocator_destroy(Allocator *const allocator) {
     // чилиииииииииим
     return;
   }
-  munmap(allocator, sizeof(Allocator));
+  p2Alloc *alloc = (p2Alloc *)allocator;
+  munmap(alloc, sizeof(p2Alloc));
   return;
 }
 
@@ -82,21 +83,23 @@ EXPORT void *allocator_alloc(Allocator *const allocator, const size_t size) {
     return NULL;
   }
 
-  if (NULL == allocator->free_lists[index]) {
-    size_t total_size = ALIGN_UP(allocator->total_size, block_size);
+  p2Alloc *alloc = (p2Alloc *)allocator;
+
+  if (NULL == alloc->free_lists[index]) {
+    size_t total_size = ALIGN_UP(alloc->total_size, block_size);
     if (total_size < block_size) {
       return NULL;
     }
 
-    BlockHeader *new_block = (BlockHeader *)allocator->memory;
+    BlockHeader *new_block = (BlockHeader *)alloc->memory;
     new_block->next = NULL;
-    allocator->memory = (char *)allocator->memory + block_size;
-    allocator->total_size -= block_size;
-    allocator->free_lists[index] = new_block;
+    alloc->memory = (char *)alloc->memory + block_size;
+    alloc->total_size -= block_size;
+    alloc->free_lists[index] = new_block;
   }
 
-  BlockHeader *block = allocator->free_lists[index];
-  allocator->free_lists[index] = block->next;
+  BlockHeader *block = alloc->free_lists[index];
+  alloc->free_lists[index] = block->next;
   return (void *)(block + 1);
 }
 
@@ -105,12 +108,14 @@ EXPORT void allocator_free(Allocator *const allocator, void *const memory) {
     return;
   }
 
+  p2Alloc *alloc = (p2Alloc *)allocator;
+
   BlockHeader *block = (BlockHeader *)memory - 1;
   size_t block_size = ALIGN_UP(sizeof(BlockHeader), sizeof(void *));
   int index = get_list_index(block_size);
 
-  block->next = allocator->free_lists[index];
-  allocator->free_lists[index] = block;
+  block->next = alloc->free_lists[index];
+  alloc->free_lists[index] = block;
 
   return;
 }

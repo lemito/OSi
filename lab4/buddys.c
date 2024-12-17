@@ -47,7 +47,7 @@ EXPORT Allocator *allocator_create(void *const memory, const size_t size) {
 EXPORT void allocator_destroy(Allocator *const allocator) {
   if (allocator == NULL) return;
   allocator->total_size = 0;
-  munmap(allocator, allocator->total_size);
+  munmap(allocator, sizeof(BuddyAllocator));
   allocator->data = NULL;
   return;
 }

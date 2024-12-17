@@ -2,10 +2,27 @@
 #define __BUDDYS_H
 
 #include <math.h>
+#include <stdarg.h>
 #include <stdint.h>
 #include <string.h>
-#include <unistd.h>
 #include <sys/mman.h>
+#include <unistd.h>
+
+#define BUFSIZ 8192
+typedef enum STATES { LOG, ERROR } STATES;
+
+int _print(char mode, char *fmt, ...) {
+  if (fmt == NULL) {
+    write(STDERR_FILENO, "ERROR", 6);
+  }
+  va_list vargs;
+  va_start(vargs, fmt);
+  char msg[BUFSIZ];
+  vsprintf(msg, fmt, vargs);
+  write(mode == ERROR ? STDERR_FILENO : STDOUT_FILENO, msg, strlen(msg));
+  va_end(vargs);
+  return 0;
+}
 
 typedef struct Allocator {
   size_t total_size;

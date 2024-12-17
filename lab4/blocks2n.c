@@ -113,7 +113,8 @@ EXPORT void allocator_free(Allocator *const allocator, void *const memory) {
   p2Alloc *alloc = (p2Alloc *)allocator;
 
   BlockHeader *block = (BlockHeader *)memory - 1;
-  size_t block_size = ALIGN_UP(sizeof(BlockHeader), sizeof(void *));
+  size_t block_size = get_block_size(sizeof(BlockHeader) +
+                                     ((uintptr_t)memory - (uintptr_t)block));
   int index = get_list_index(block_size);
 
   block->next = alloc->free_lists[index];

@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 #include "main.h"
 
 // NOTE: MSVC compiler does not export symbols unless annotated
@@ -21,34 +23,54 @@ EXPORT Allocator *allocator_create(void *const memory, const size_t size) {
   if (memory == NULL) return NULL;
   if (size < 16) return NULL;
   // BuddyAllocator *allocator = (BuddyAllocator *)memory;
+  printf("debug\n");
+
   BuddyAllocator *allocator =
       mmap(NULL, sizeof(BuddyAllocator), PROT_READ | PROT_WRITE,
            MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
   if (allocator == MAP_FAILED) {
+    printf("debug\n");
     return NULL;
   }
+  printf("debug\n");
+
   // Устанавливаем параметры
-  allocator->total_size = size;
   allocator->block_size = PAGE_SIZE;
   // allocator->memory = (void *)((uintptr_t)memory + sizeof(BuddyAllocator));
-  allocator->memory = memory;
+  // allocator->memory = memory;
   // Определяем количество блоков
   allocator->num_blocks = size / PAGE_SIZE;
 
   // bitmap = 1bit/block
   size_t bitmap_size = (allocator->num_blocks + 7) / 8;
-  allocator->bitmap = (uint8_t *)((uintptr_t)allocator->memory + size);
+  printf("debug5\n");
 
+  allocator->bitmap = (uint8_t *)((uintptr_t)memory);
+
+  allocator->memory = (void *)((uintptr_t)memory + bitmap_size);
+
+  // Обнуляем битовую карту
   memset(allocator->bitmap, 0, bitmap_size);
+  allocator->total_size = size - bitmap_size;
+
+  LOG("Buddys готовы\n");
 
   return (Allocator *)allocator;
 }
 
 EXPORT void allocator_destroy(Allocator *const allocator) {
   if (allocator == NULL) return;
+  BuddyAllocator *b_allocator = (BuddyAllocator *)allocator;
+
+  size_t bitmap_size = (b_allocator->num_blocks + 7) / 8;
+
   allocator->total_size = 0;
-  munmap(allocator, sizeof(BuddyAllocator));
-  allocator->data = NULL;
+  if (-1 == munmap(allocator, sizeof(BuddyAllocator))) {
+  }
+
+  // munmap(b_allocator->bitmap, sizeof(uint8_t) * bitmap_size);
+  printf("sdfgh\n");
+
   return;
 }
 

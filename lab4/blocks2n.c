@@ -56,7 +56,9 @@ EXPORT Allocator *allocator_create(void *const memory, const size_t size) {
 
   allocator->memory = memory;
   allocator->total_size = size;
-  memset(allocator->free_lists, 0, sizeof(allocator->free_lists));
+  memset(allocator->free_lists, 0, sizeof(BlockHeader *) * 32);
+
+  LOG("Блоки 2n готовы\n");
 
   return (Allocator *)allocator;
 }

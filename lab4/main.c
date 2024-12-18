@@ -13,12 +13,9 @@ static allocator_destroy_f* allocator_destroy;
 static allocator_alloc_f* allocator_alloc;
 static allocator_free_f* allocator_free;
 
-// NOTE: Functions stubs will be used, if library failed to load
-// NOTE: Stubs are better than NULL function pointers,
-//       you don't need to check for NULL before calling a function
 static struct Allocator* func_impl_stub(void* const mem,
                                         const unsigned long x) {
-  (void)x;  // NOTE: Compiler will warn about unused parameter otherwise
+  (void)x;
   (void)mem;
   return NULL;
 }

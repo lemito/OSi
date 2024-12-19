@@ -1,42 +1,11 @@
 #include "main.h"
 
-#include <dlfcn.h>  // dlopen, dlsym, dlclose, RTLD_*
-#include <stddef.h>
-#include <stdlib.h>
-#include <sys/mman.h>
-#include <unistd.h>  // write
-
 #define SIZE (1024 * 1024)
 
 static allocator_create_f* allocator_create;
 static allocator_destroy_f* allocator_destroy;
 static allocator_alloc_f* allocator_alloc;
 static allocator_free_f* allocator_free;
-
-static struct Allocator* func_impl_stub(void* const mem,
-                                        const unsigned long x) {
-  (void)x;
-  (void)mem;
-  return NULL;
-}
-
-static void func_impl_stub2(struct Allocator* const alloc) {
-  (void)alloc;
-  return;
-}
-
-static void* func_impl_stub3(struct Allocator* const alloc,
-                             const unsigned long x) {
-  (void)alloc;
-  (void)x;
-  return NULL;
-}
-
-static void func_impl_stub4(struct Allocator* const alloc, void* const mem) {
-  (void)alloc;
-  (void)mem;
-  return;
-}
 
 int main(int argc, char** argv) {
   (void)argc;
@@ -51,7 +20,7 @@ int main(int argc, char** argv) {
       const char msg[] =
           "warning: failed to find allocator_create function implementation\n";
       write(STDERR_FILENO, msg, sizeof(msg));
-      allocator_create = func_impl_stub;
+      allocator_create = allocator_create_extra;
     }
 
     allocator_destroy = dlsym(library, "allocator_destroy");
@@ -59,7 +28,7 @@ int main(int argc, char** argv) {
       const char msg[] =
           "warning: failed to find allocator_destroy function implementation\n";
       write(STDERR_FILENO, msg, sizeof(msg));
-      allocator_destroy = func_impl_stub2;
+      allocator_destroy = allocator_destroy_extra;
     }
 
     allocator_alloc = dlsym(library, "allocator_alloc");
@@ -67,7 +36,7 @@ int main(int argc, char** argv) {
       const char msg[] =
           "warning: failed to find allocator_alloc function implementation\n";
       write(STDERR_FILENO, msg, sizeof(msg));
-      allocator_alloc = func_impl_stub3;
+      allocator_alloc = allocator_alloc_extra;
     }
 
     allocator_free = dlsym(library, "allocator_free");
@@ -75,7 +44,7 @@ int main(int argc, char** argv) {
       const char msg[] =
           "warning: failed to find allocator_free function implementation\n";
       write(STDERR_FILENO, msg, sizeof(msg));
-      allocator_free = func_impl_stub4;
+      allocator_free = allocator_free_extra;
     }
   }
   /* ==================================== */
@@ -111,10 +80,17 @@ int main(int argc, char** argv) {
     Allocator* allocator = allocator_create(memory, SIZE);
 
     LOG("Аллоцируем\n");
-    void* block1 = allocator_alloc(allocator, 1024);
+    int* block1 = (int*)allocator_alloc(allocator, sizeof(int) * 52);
+    for (size_t i = 0; i < 53; i++) {
+      block1[i] = 27022005 - (i % 52);
+    }
+
+    int* test_for_free = block1 + 2;
+
     void* block2 = allocator_alloc(allocator, 2048);
 
-    LOG("Алоцированный блок 1 живет по адресу %p\n", block1);
+    LOG("Алоцированный блок 1 живет по адресу %p и там есть %d\n", block1,
+        *test_for_free);
     LOG("Алоцированный блок 1 живет по адресу %p\n", block2);
 
     allocator_free(allocator, block1);

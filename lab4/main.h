@@ -1,13 +1,18 @@
 #ifndef __BUDDYS_H
 #define __BUDDYS_H
 
+#include <assert.h>
+#include <dlfcn.h>  // dlopen, dlsym, dlclose, RTLD_*
 #include <math.h>
 #include <stdarg.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h>
 #include <unistd.h>
+#include <unistd.h>  // write
 
 #define BUFSIZ 8192
 typedef enum STATES { LOG_s, ERROR_s } STATES;
@@ -44,7 +49,7 @@ typedef void *allocator_alloc_f(Allocator *const allocator, const size_t size);
 typedef void allocator_free_f(Allocator *const allocator, void *const memory);
 
 /* блок замененок */
-Allocator *allocator_create_extra(void *const memory, const size_t size) {
+static Allocator *allocator_create_extra(void *const memory, const size_t size) {
   if (memory == NULL || size == 0) {
     return NULL;
   }
@@ -60,7 +65,7 @@ Allocator *allocator_create_extra(void *const memory, const size_t size) {
 
   return allocator;
 }
-void allocator_destroy_extra(Allocator *const allocator) {
+static void allocator_destroy_extra(Allocator *const allocator) {
   if (allocator == NULL) {
     return;
   }
@@ -68,8 +73,8 @@ void allocator_destroy_extra(Allocator *const allocator) {
   munmap(allocator, sizeof(Allocator));
   allocator->data = NULL;
 }
-void *allocator_alloc_extra(Allocator *const allocator, const size_t size) {}
-void allocator_free_extra(Allocator *const allocator, void *const memory) {}
+static void *allocator_alloc_extra(Allocator *const allocator, const size_t size) {}
+static void allocator_free_extra(Allocator *const allocator, void *const memory) {}
 /**/
 
 #endif  // __BUDDYS_H

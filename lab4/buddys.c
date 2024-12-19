@@ -28,19 +28,10 @@ EXPORT Allocator *allocator_create(void *const memory, const size_t size) {
   }
   printf("debug\n");
 
-  // BuddyAllocator *allocator =
-  //     mmap(NULL, sizeof(BuddyAllocator), PROT_READ | PROT_WRITE,
-  //          MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-  // if (allocator == MAP_FAILED) {
-  //   printf("debug\n");
-  //   return NULL;
-  // }
   BuddyAllocator *allocator = (BuddyAllocator *)memory;
   printf("debug\n");
   // Устанавливаем параметры
   allocator->block_size = PAGE_SIZE;
-  // allocator->memory = (void *)((uintptr_t)memory + sizeof(BuddyAllocator));
-  // allocator->memory = memory;
   // Определяем количество блоков
   allocator->num_blocks = size / PAGE_SIZE;
 
@@ -67,12 +58,11 @@ EXPORT void allocator_destroy(Allocator *const allocator) {
 
   size_t bitmap_size = (b_allocator->num_blocks + 7) / 8;
 
-  allocator->total_size = 0;
-  if (-1 == munmap(allocator, sizeof(BuddyAllocator))) {
-  }
-
-  // munmap(b_allocator->bitmap, sizeof(uint8_t) * bitmap_size);
-  printf("sdfgh\n");
+  b_allocator->bitmap = NULL;
+  b_allocator->block_size = 0;
+  b_allocator->num_blocks = 0;
+  b_allocator->total_size = 0;
+  b_allocator->memory = NULL;
 
   return;
 }

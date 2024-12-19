@@ -10,6 +10,8 @@
 #define PAGE_SIZE 4096
 // размер блока максимум
 #define MAX_BLOCK_SIZE (16 * 1024)
+// кол-во списков
+#define MAX_BLOCK_CNT 32
 
 // выравнивалка к степеням
 #define ALIGN_UP(x, align) (((x) + ((align) - 1)) & ~((align) - 1))
@@ -21,10 +23,10 @@ typedef struct BlockHeader {
 typedef struct p2Alloc {
   void *memory;       // сама память
   size_t total_size;  // размер
-  BlockHeader *free_lists[32];  // массив списков свободных блоков
+  BlockHeader *free_lists[MAX_BLOCK_CNT];  // массив списков свободных блоков
 } p2Alloc;
 
-// узнаем размер блока
+// узнаем размер блока, который можно забить под нужный размер
 size_t get_block_size(size_t size) {
   size_t block_size = 1;
   while (block_size < size) {
@@ -33,7 +35,7 @@ size_t get_block_size(size_t size) {
   return block_size;
 }
 
-// получаем индекс списка
+// получаем индекс списка блоков свободных необходимого размера
 int get_list_index(size_t block_size) {
   int index = 0;
   while (block_size > 1) {
@@ -48,16 +50,26 @@ EXPORT Allocator *allocator_create(void *const memory, const size_t size) {
     return NULL;
   }
 
-  // p2Alloc *allocator = mmap(NULL, sizeof(p2Alloc), PROT_READ | PROT_WRITE,
-  //                           MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-  // if (allocator == MAP_FAILED) {
-  //   return NULL;
-  // }
   p2Alloc *allocator = (p2Alloc *)memory;
 
   allocator->memory = (void *)((uintptr_t)memory + sizeof(p2Alloc));
   allocator->total_size = size;
-  memset(allocator->free_lists, 0, sizeof(BlockHeader *) * 32);
+  memset(allocator->free_lists, 0, sizeof(allocator->free_lists));
+
+  size_t usable_size = size - sizeof(p2Alloc);
+  size_t block_size = next_power_of_two(usable_size);
+
+  int index = get_list_index(block_size);
+  allocator->free_lists[index] = (BlockHeader *)allocator->memory;
+
+  BlockHeader *current = allocator->free_lists[index];
+  while ((uintptr_t)current + block_size <= (uintptr_t)memory + size) {
+    BlockHeader *next = (BlockHeader *)((uintptr_t)current + block_size);
+    current->next = ((uintptr_t)next + block_size <= (uintptr_t)memory + size)
+                        ? next
+                        : NULL;
+    current = next;
+  }
 
   LOG("Блоки 2n готовы\n");
 
@@ -70,7 +82,9 @@ EXPORT void allocator_destroy(Allocator *const allocator) {
     return;
   }
   p2Alloc *alloc = (p2Alloc *)allocator;
-  munmap(alloc, sizeof(p2Alloc));
+  memset(alloc->free_lists, 0, sizeof(alloc->free_lists));
+  alloc->total_size = 0;
+  alloc->memory = NULL;
   return;
 }
 
@@ -79,31 +93,19 @@ EXPORT void *allocator_alloc(Allocator *const allocator, const size_t size) {
     return NULL;
   }
 
-  size_t block_size = get_block_size(size + sizeof(BlockHeader));
-  int index = get_list_index(block_size);
-  // индекс получился слишком большим
-  if (index >= 32) {
-    return NULL;
-  }
-
   p2Alloc *alloc = (p2Alloc *)allocator;
 
-  if (NULL == alloc->free_lists[index]) {
-    size_t total_size = ALIGN_UP(alloc->total_size, block_size);
-    if (total_size < block_size) {
-      return NULL;
-    }
-
-    BlockHeader *new_block = (BlockHeader *)alloc->memory;
-    new_block->next = NULL;
-    alloc->memory = (char *)alloc->memory + block_size;
-    alloc->total_size -= block_size;
-    alloc->free_lists[index] = new_block;
+  size_t block_size = get_block_size(size);
+  int index = get_list_index(block_size);
+  // индекс получился слишком большим
+  if (index >= MAX_BLOCK_CNT || !alloc->free_lists[index]) {
+    return NULL;
   }
 
   BlockHeader *block = alloc->free_lists[index];
   alloc->free_lists[index] = block->next;
-  return (void *)(block + 1);
+
+  return (void *)block;
 }
 
 EXPORT void allocator_free(Allocator *const allocator, void *const memory) {
@@ -113,11 +115,18 @@ EXPORT void allocator_free(Allocator *const allocator, void *const memory) {
 
   p2Alloc *alloc = (p2Alloc *)allocator;
 
-  BlockHeader *block = (BlockHeader *)memory - 1;
-  size_t block_size = get_block_size(sizeof(BlockHeader) +
-                                     ((uintptr_t)memory - (uintptr_t)block));
+  uintptr_t memory_addr = (uintptr_t)memory;
+  uintptr_t alloc_start = (uintptr_t)alloc->memory;
+  uintptr_t alloc_end = alloc_start + alloc->total_size - sizeof(p2Alloc);
+
+  if (memory_addr < alloc_start || memory_addr >= alloc_end) {
+    return;
+  }
+
+  size_t block_size = next_power_of_two(memory_addr - alloc_start);
   int index = get_list_index(block_size);
 
+  BlockHeader *block = (BlockHeader *)memory;
   block->next = alloc->free_lists[index];
   alloc->free_lists[index] = block;
 

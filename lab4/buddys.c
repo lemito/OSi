@@ -20,20 +20,23 @@ typedef struct BuddyAllocator {
 } BuddyAllocator;
 
 EXPORT Allocator *allocator_create(void *const memory, const size_t size) {
-  if (memory == NULL) return NULL;
-  if (size < 16) return NULL;
-  // BuddyAllocator *allocator = (BuddyAllocator *)memory;
-  printf("debug\n");
-
-  BuddyAllocator *allocator =
-      mmap(NULL, sizeof(BuddyAllocator), PROT_READ | PROT_WRITE,
-           MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-  if (allocator == MAP_FAILED) {
-    printf("debug\n");
+  if (memory == NULL) {
+    return NULL;
+  }
+  if (size < sizeof(BuddyAllocator) + 16) {
     return NULL;
   }
   printf("debug\n");
 
+  // BuddyAllocator *allocator =
+  //     mmap(NULL, sizeof(BuddyAllocator), PROT_READ | PROT_WRITE,
+  //          MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+  // if (allocator == MAP_FAILED) {
+  //   printf("debug\n");
+  //   return NULL;
+  // }
+  BuddyAllocator *allocator = (BuddyAllocator *)memory;
+  printf("debug\n");
   // Устанавливаем параметры
   allocator->block_size = PAGE_SIZE;
   // allocator->memory = (void *)((uintptr_t)memory + sizeof(BuddyAllocator));
@@ -45,9 +48,9 @@ EXPORT Allocator *allocator_create(void *const memory, const size_t size) {
   size_t bitmap_size = (allocator->num_blocks + 7) / 8;
   printf("debug5\n");
 
-  allocator->bitmap = (uint8_t *)((uintptr_t)memory);
-
-  allocator->memory = (void *)((uintptr_t)memory + bitmap_size);
+  allocator->memory =
+      (void *)((char *)memory + sizeof(BuddyAllocator) + bitmap_size);
+  allocator->bitmap = (uint8_t *)((char *)memory + sizeof(BuddyAllocator));
 
   // Обнуляем битовую карту
   memset(allocator->bitmap, 0, bitmap_size);

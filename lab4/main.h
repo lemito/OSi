@@ -15,6 +15,7 @@ typedef enum STATES { LOG_s, ERROR_s } STATES;
 int _print(char mode, char *fmt, ...) {
   if (fmt == NULL) {
     write(STDERR_FILENO, "ERROR", 6);
+    return 1;
   }
   va_list vargs;
   va_start(vargs, fmt);
@@ -47,8 +48,9 @@ Allocator *allocator_create_extra(void *const memory, const size_t size) {
   if (memory == NULL || size == 0) {
     return NULL;
   }
-  Allocator *allocator = mmap(NULL, sizeof(Allocator), PROT_READ | PROT_WRITE,
-                              MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+  Allocator *allocator =
+      (Allocator *)mmap(NULL, sizeof(Allocator), PROT_READ | PROT_WRITE,
+                        MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
   if (allocator == MAP_FAILED) {
     return NULL;
   }

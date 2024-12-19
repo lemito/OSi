@@ -42,11 +42,10 @@ int main(int argc, char** argv) {
   (void)argc;
   LOG("mem create");
 
-  // void* library = dlopen(argv[1], RTLD_LOCAL | RTLD_NOW);
-  void* library = dlopen("./blocks2n.so", RTLD_LOCAL | RTLD_NOW);
-  argc++;
+  void* library = dlopen(argv[1], RTLD_LOCAL | RTLD_NOW);
+  // void* library = dlopen("./buddys.so", RTLD_LOCAL | RTLD_NOW);
   /* библиотека смогла открыться */
-  if (argc > 1 && library != NULL) {
+  if (library != NULL) {
     allocator_create = dlsym(library, "allocator_create");
     if (allocator_create == NULL) {
       const char msg[] =

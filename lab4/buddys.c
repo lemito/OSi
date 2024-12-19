@@ -49,7 +49,7 @@ EXPORT Allocator *allocator_create(void *const memory, const size_t size) {
   printf("debug5\n");
 
   allocator->memory =
-      (void *)((char *)memory + sizeof(BuddyAllocator) + bitmap_size);
+      (void *)((uintptr_t)memory + sizeof(BuddyAllocator) + bitmap_size);
   allocator->bitmap = (uint8_t *)((char *)memory + sizeof(BuddyAllocator));
 
   // Обнуляем битовую карту

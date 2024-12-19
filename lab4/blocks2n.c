@@ -48,13 +48,14 @@ EXPORT Allocator *allocator_create(void *const memory, const size_t size) {
     return NULL;
   }
 
-  p2Alloc *allocator = mmap(NULL, sizeof(p2Alloc), PROT_READ | PROT_WRITE,
-                            MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-  if (allocator == MAP_FAILED) {
-    return NULL;
-  }
+  // p2Alloc *allocator = mmap(NULL, sizeof(p2Alloc), PROT_READ | PROT_WRITE,
+  //                           MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+  // if (allocator == MAP_FAILED) {
+  //   return NULL;
+  // }
+  p2Alloc *allocator = (p2Alloc *)memory;
 
-  allocator->memory = memory;
+  allocator->memory = (void *)((uintptr_t)memory + sizeof(p2Alloc));
   allocator->total_size = size;
   memset(allocator->free_lists, 0, sizeof(BlockHeader *) * 32);
 

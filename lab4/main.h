@@ -14,6 +14,13 @@
 #include <unistd.h>
 #include <unistd.h>  // write
 
+// NOTE: MSVC compiler does not export symbols unless annotated
+#ifdef _MSC_VER
+#define EXPORT __declspec(dllexport)
+#else
+#define EXPORT
+#endif
+
 #define BUFSIZ 8192
 typedef enum STATES { LOG_s, ERROR_s } STATES;
 
@@ -49,7 +56,8 @@ typedef void *allocator_alloc_f(Allocator *const allocator, const size_t size);
 typedef void allocator_free_f(Allocator *const allocator, void *const memory);
 
 /* блок замененок */
-static Allocator *allocator_create_extra(void *const memory, const size_t size) {
+static Allocator *allocator_create_extra(void *const memory,
+                                         const size_t size) {
   if (memory == NULL || size == 0) {
     return NULL;
   }
@@ -73,8 +81,10 @@ static void allocator_destroy_extra(Allocator *const allocator) {
   munmap(allocator, sizeof(Allocator));
   allocator->data = NULL;
 }
-static void *allocator_alloc_extra(Allocator *const allocator, const size_t size) {}
-static void allocator_free_extra(Allocator *const allocator, void *const memory) {}
+static void *allocator_alloc_extra(Allocator *const allocator,
+                                   const size_t size) {}
+static void allocator_free_extra(Allocator *const allocator,
+                                 void *const memory) {}
 /**/
 
 #endif  // __BUDDYS_H

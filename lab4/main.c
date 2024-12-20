@@ -12,7 +12,6 @@ int main(int argc, char** argv) {
   LOG("mem create");
 
   void* library = dlopen(argv[1], RTLD_LOCAL | RTLD_NOW);
-  // void* library = dlopen("./buddys.so", RTLD_LOCAL | RTLD_NOW);
   /* библиотека смогла открыться */
   if (library != NULL) {
     allocator_create = dlsym(library, "allocator_create");
@@ -53,17 +52,10 @@ int main(int argc, char** argv) {
     const char msg[] =
         "warning: library failed to load, trying standard implemntations\n";
     write(STDERR_FILENO, msg, sizeof(msg));
-
-    // NOTE: Trying standard implementations
-    library = dlopen("libm.so.6", RTLD_GLOBAL | RTLD_LAZY);
-    if (library == NULL) {
-      const char msg[] = "error: failed to open standard math library\n";
-      write(STDERR_FILENO, msg, sizeof(msg));
-      return EXIT_FAILURE;
-    }
-
-    // fabsf = dlsym(library, "fabsf");
-    // cosf = dlsym(library, "cosf");
+    allocator_create = allocator_create_extra;
+    allocator_destroy = allocator_destroy_extra;
+    allocator_alloc = allocator_alloc_extra;
+    allocator_free = allocator_free_extra;
   }
 
   /* сами действие */
@@ -91,15 +83,19 @@ int main(int argc, char** argv) {
 
     int* test_for_free = block1 + 2;
 
-    void* block2 = allocator_alloc(allocator, 2048);
+    char* block2 = (char*)allocator_alloc(allocator, 39);
     if (block2 == NULL) {
       ERROR("block2 NULL\n");
       exit(EXIT_FAILURE);
     }
 
+    sprintf(block2, "Meow meow meow ^_^\nHappy New Year!!!\0");
+
     LOG("Алоцированный блок 1 живет по адресу %p и там есть %d\n", block1,
         *test_for_free);
     LOG("Алоцированный блок 1 живет по адресу %p\n", block2);
+
+    LOG("block2 == %s\n", block2);
 
     allocator_free(allocator, block1);
 

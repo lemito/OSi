@@ -77,14 +77,33 @@ static void allocator_destroy_extra(Allocator *const allocator) {
   if (allocator == NULL) {
     return;
   }
+
   allocator->total_size = 0;
   munmap(allocator, sizeof(Allocator));
-  allocator->data = NULL;
 }
 static void *allocator_alloc_extra(Allocator *const allocator,
-                                   const size_t size) {}
+                                   const size_t size) {
+  if (allocator == NULL || size == 0) {
+    return NULL;
+  }
+
+  static size_t offset = 0;
+
+  if (offset + size > allocator->total_size) {
+    return NULL;
+  }
+
+  void *allocated_memory = (void *)((char *)allocator->data + offset);
+  offset += size;
+
+  return allocated_memory;
+}
+
 static void allocator_free_extra(Allocator *const allocator,
-                                 void *const memory) {}
+                                 void *const memory) {
+  (void)allocator;
+  (void)memory;
+}
 /**/
 
 #endif  // __BUDDYS_H

@@ -1,13 +1,4 @@
-#include <stdio.h>
-
 #include "main.h"
-
-// NOTE: MSVC compiler does not export symbols unless annotated
-#ifdef _MSC_VER
-#define EXPORT __declspec(dllexport)
-#else
-#define EXPORT
-#endif
 
 #define PAGE_SIZE 4096
 
@@ -68,7 +59,7 @@ EXPORT void allocator_destroy(Allocator *const allocator) {
 }
 
 EXPORT void *allocator_alloc(Allocator *const allocator, const size_t size) {
-  if (!allocator || size == 0) return NULL;
+  if (allocator == NULL || size == 0) return NULL;
   BuddyAllocator *b_allocator = (BuddyAllocator *)allocator;
 
   size_t block_size = b_allocator->block_size;

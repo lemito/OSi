@@ -46,6 +46,12 @@ typedef struct Allocator {
   void *data;
 } Allocator;
 
+typedef struct Allocator_extra {
+  size_t total_size;
+  void *data;
+  size_t offset;
+} Allocator_extra;
+
 // инициализация аллокатора на памяти memory размера size
 typedef Allocator *allocator_create_f(void *const memory, const size_t size);
 // деинициализация структуры аллокатора
@@ -61,40 +67,38 @@ static Allocator *allocator_create_extra(void *const memory,
   if (memory == NULL || size == 0) {
     return NULL;
   }
-  Allocator *allocator =
-      (Allocator *)mmap(NULL, sizeof(Allocator), PROT_READ | PROT_WRITE,
-                        MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-  if (allocator == MAP_FAILED) {
-    return NULL;
-  }
 
+  Allocator_extra *allocator = (Allocator_extra *)memory;
   allocator->data = memory;
   allocator->total_size = size;
-
-  return allocator;
+  allocator->offset = sizeof(Allocator_extra);
+  return (Allocator *)allocator;
 }
+
 static void allocator_destroy_extra(Allocator *const allocator) {
   if (allocator == NULL) {
     return;
   }
+  Allocator_extra *allo = (Allocator_extra *)allocator;
 
-  allocator->total_size = 0;
-  munmap(allocator, sizeof(Allocator));
+  allo->total_size = 0;
+  allo->offset = 0;
 }
+
 static void *allocator_alloc_extra(Allocator *const allocator,
                                    const size_t size) {
   if (allocator == NULL || size == 0) {
     return NULL;
   }
 
-  static size_t offset = 0;
+  Allocator_extra *alloc = (Allocator_extra *)allocator;
 
-  if (offset + size > allocator->total_size) {
+  if (alloc->offset + size > alloc->total_size) {
     return NULL;
   }
 
-  void *allocated_memory = (void *)((char *)allocator->data + offset);
-  offset += size;
+  void *allocated_memory = (void *)((uintptr_t)alloc->data + alloc->offset);
+  alloc->offset += size;
 
   return allocated_memory;
 }

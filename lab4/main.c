@@ -81,6 +81,10 @@ int main(int argc, char** argv) {
 
     LOG("Аллоцируем\n");
     int* block1 = (int*)allocator_alloc(allocator, sizeof(int) * 52);
+    if (block1 == NULL) {
+      ERROR("block1 NULL\n");
+      exit(EXIT_FAILURE);
+    }
     for (size_t i = 0; i < 53; i++) {
       block1[i] = 27022005 - (i % 52);
     }
@@ -88,9 +92,13 @@ int main(int argc, char** argv) {
     int* test_for_free = block1 + 2;
 
     void* block2 = allocator_alloc(allocator, 2048);
+    if (block2 == NULL) {
+      ERROR("block2 NULL\n");
+      exit(EXIT_FAILURE);
+    }
 
     LOG("Алоцированный блок 1 живет по адресу %p и там есть %d\n", block1,
-        ((uintptr_t)block2 - (uintptr_t)block1) - sizeof(int) * 52);
+        *test_for_free);
     LOG("Алоцированный блок 1 живет по адресу %p\n", block2);
 
     allocator_free(allocator, block1);

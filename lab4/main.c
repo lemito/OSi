@@ -90,8 +90,20 @@ int main(int argc, char** argv) {
     void* block2 = allocator_alloc(allocator, 2048);
 
     LOG("Алоцированный блок 1 живет по адресу %p и там есть %d\n", block1,
-        *test_for_free);
+        ((uintptr_t)block2 - (uintptr_t)block1) - sizeof(int) * 52);
     LOG("Алоцированный блок 1 живет по адресу %p\n", block2);
+
+    allocator_free(allocator, block1);
+
+    block1 = (int*)allocator_alloc(allocator, sizeof(int) * 52);
+    for (size_t i = 0; i < 53; i++) {
+      block1[i] = 17;
+    }
+
+    test_for_free = block1 + 3;
+
+    LOG("Алоцированный блок 1 живет по адресу %p и там есть %d\n", block1,
+        *test_for_free);
 
     allocator_free(allocator, block1);
     allocator_free(allocator, block2);

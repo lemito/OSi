@@ -60,9 +60,14 @@ int main(int argc, char** argv) {
 
   /* сами действие */
   {
+    clock_t start, end;  // секундомеры
+    void* memory;        // пул памяти
+    int* block1;         // тестовый блок 1
+    char* block2;        // тестовый блок 2
+
     LOG("Создаем memory\n");
-    void* memory = mmap(NULL, SIZE, PROT_READ | PROT_WRITE,
-                        MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+    memory = mmap(NULL, SIZE, PROT_READ | PROT_WRITE,
+                  MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
     if (memory == MAP_FAILED) {
       perror("mmap failed");
       return 1;
@@ -72,18 +77,20 @@ int main(int argc, char** argv) {
     Allocator* allocator = allocator_create(memory, SIZE);
 
     LOG("Аллоцируем\n");
-    int* block1 = (int*)allocator_alloc(allocator, sizeof(int) * 52);
+    start = clock();
+    block1 = (int*)allocator_alloc(allocator, sizeof(int) * 52);
     if (block1 == NULL) {
       ERROR("block1 NULL\n");
       exit(EXIT_FAILURE);
     }
+    end = clock();
     for (size_t i = 0; i < 53; i++) {
       block1[i] = 27022005 - (i % 52);
     }
 
     int* test_for_free = block1 + 2;
 
-    char* block2 = (char*)allocator_alloc(allocator, 39);
+    block2 = (char*)allocator_alloc(allocator, 39);
     if (block2 == NULL) {
       ERROR("block2 NULL\n");
       exit(EXIT_FAILURE);
@@ -93,23 +100,18 @@ int main(int argc, char** argv) {
 
     LOG("Алоцированный блок 1 живет по адресу %p и там есть %d\n", block1,
         *test_for_free);
-    LOG("Алоцированный блок 1 живет по адресу %p\n", block2);
+
+    LOG("Аллокация заняла %.6f\n", (double_t)(end - start) / CLOCKS_PER_SEC);
+
+    LOG("Алоцированный блок 2 живет по адресу %p\n", block2);
 
     LOG("block2 == %s\n", block2);
 
+    start = clock();
     allocator_free(allocator, block1);
+    end = clock();
+    LOG("Чистка блока заняла %.6f\n", (double_t)(end - start) / CLOCKS_PER_SEC);
 
-    block1 = (int*)allocator_alloc(allocator, sizeof(int) * 52);
-    for (size_t i = 0; i < 53; i++) {
-      block1[i] = 17;
-    }
-
-    test_for_free = block1 + 3;
-
-    LOG("Алоцированный блок 1 живет по адресу %p и там есть %d\n", block1,
-        *test_for_free);
-
-    allocator_free(allocator, block1);
     allocator_free(allocator, block2);
 
     LOG("Очищено\n");

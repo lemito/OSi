@@ -60,10 +60,10 @@ int main(int argc, char** argv) {
 
   /* сами действие */
   {
-    clock_t start, end;  // секундомеры
-    void* memory;        // пул памяти
-    int* block1;         // тестовый блок 1
-    char* block2;        // тестовый блок 2
+    Allocator* allocator;  // алокатор
+    void* memory;          // пул памяти
+    int* block1;           // тестовый блок 1
+    char* block2;          // тестовый блок 2
 
     LOG("Создаем memory\n");
     memory = mmap(NULL, SIZE, PROT_READ | PROT_WRITE,
@@ -74,16 +74,18 @@ int main(int argc, char** argv) {
     }
 
     LOG("Создаем аллокатор\n");
-    Allocator* allocator = allocator_create(memory, SIZE);
+    allocator = allocator_create(memory, SIZE);
+    LOG("%zu Фактор использования == %lf\n", allocator->total_size,
+        (double_t)allocator->total_size / SIZE);
 
     LOG("Аллоцируем\n");
-    start = clock();
+    TIMER_START();
     block1 = (int*)allocator_alloc(allocator, sizeof(int) * 52);
     if (block1 == NULL) {
       ERROR("block1 NULL\n");
       exit(EXIT_FAILURE);
     }
-    end = clock();
+    TIMER_END("Аллокация заняла ");
     for (size_t i = 0; i < 53; i++) {
       block1[i] = 27022005 - (i % 52);
     }
@@ -101,16 +103,13 @@ int main(int argc, char** argv) {
     LOG("Алоцированный блок 1 живет по адресу %p и там есть %d\n", block1,
         *test_for_free);
 
-    LOG("Аллокация заняла %.6f\n", (double_t)(end - start) / CLOCKS_PER_SEC);
-
     LOG("Алоцированный блок 2 живет по адресу %p\n", block2);
 
     LOG("block2 == %s\n", block2);
 
-    start = clock();
+    TIMER_START();
     allocator_free(allocator, block1);
-    end = clock();
-    LOG("Чистка блока заняла %.6f\n", (double_t)(end - start) / CLOCKS_PER_SEC);
+    TIMER_END("Чистка блока заняла ");
 
     allocator_free(allocator, block2);
 

@@ -1,6 +1,6 @@
 #include "main.h"
 
-#define PAGE_SIZE 4096
+#define PAGE_SIZE 1
 
 typedef struct BuddyAllocator {
   size_t total_size;  // общий размер
@@ -26,7 +26,7 @@ EXPORT Allocator *allocator_create(void *const memory, const size_t size) {
   // Определяем количество блоков
   allocator->num_blocks = size / PAGE_SIZE;
 
-  // bitmap = 1bit/block
+  // bitmap = 1bit/block; флаг занятости
   size_t bitmap_size = (allocator->num_blocks + 7) / 8;
   printf("debug5\n");
 

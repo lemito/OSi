@@ -12,8 +12,8 @@ typedef struct block_t {
 } block_t;
 
 typedef struct p2Alloc {
-  void *memory;       // сама память
   size_t total_size;  // размер общий
+  void *memory;       // сама память
   block_t *free_lists[MAX_BLOCK_CNT];  // массив списков свободных блоков
 } p2Alloc;
 
@@ -69,7 +69,7 @@ EXPORT Allocator *allocator_create(void *const memory, const size_t size) {
       block->next = allocator->free_lists[index];
       allocator->free_lists[index] = block;
 
-      offset += block_size; 
+      offset += block_size;
       remaining_size -= block_size;
 
       block_size <<= 1;

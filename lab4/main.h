@@ -69,9 +69,9 @@ static Allocator *allocator_create_extra(void *const memory,
   }
 
   Allocator_extra *allocator = (Allocator_extra *)memory;
-  allocator->data = memory;
-  allocator->total_size = size;
-  allocator->offset = sizeof(Allocator_extra);
+  allocator->data = (void *)((uintptr_t)memory + sizeof(Allocator_extra));
+  allocator->total_size = size - sizeof(Allocator_extra);
+  allocator->offset = 0;
   return (Allocator *)allocator;
 }
 

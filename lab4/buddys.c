@@ -3,8 +3,10 @@
 #define PAGE_SIZE 1
 
 typedef struct BuddyAllocator {
-  size_t total_size;  // общий размер
-  void *memory;       // начало памяти
+   size_t total_size;     // общий размер
+  void *memory;          // указатель на память
+  long long in_use_mem;  // занятая память (с учётом накладных расходов)
+  long long requested_mem;  // запрашиваемая память (без накладных расходов)
   size_t block_size;  // размер блока памяти
   size_t num_blocks;  // Общее количество блоков
   uint8_t *bitmap;  // Битовая карта для отслеживания свободных/занятых блоков
@@ -14,7 +16,7 @@ EXPORT Allocator *allocator_create(void *const memory, const size_t size) {
   if (memory == NULL) {
     return NULL;
   }
-  if (size < sizeof(BuddyAllocator) + 16) {
+  if (size < sizeof(BuddyAllocator)) {
     return NULL;
   }
 

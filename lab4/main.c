@@ -64,12 +64,13 @@ int main(int argc, char** argv) {
     void* memory;          // пул памяти
     int* block1;           // тестовый блок 1
     char* block2;          // тестовый блок 2
+    TIMER_INIT();          // времечко
 
     LOG("Создаем memory\n");
     memory = mmap(NULL, SIZE, PROT_READ | PROT_WRITE,
                   MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
     if (memory == MAP_FAILED) {
-      perror("mmap failed");
+      perror("mmap failed\n");
       return 1;
     }
 

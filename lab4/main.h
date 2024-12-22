@@ -42,11 +42,14 @@ int _print(char mode, char *fmt, ...) {
 #define LOG(fmt, ...) _print(LOG_s, fmt, ##__VA_ARGS__)
 #define ERROR(fmt, ...) _print(ERROR_s, fmt, ##__VA_ARGS__)
 
-#define TIMER_START() clock_t start_time = clock();
-#define TIMER_END(text)                                          \
-  clock_t end_time = clock();                                    \
-  double res = (double)(end_time - start_time) / CLOCKS_PER_SEC; \
-  LOG("%s %.6lf", text, res);
+#define TIMER_INIT()            \
+  clock_t start_time, end_time; \
+  double timer_res;
+#define TIMER_START() start_time = clock();
+#define TIMER_END(text)                                         \
+  end_time = clock();                                           \
+  timer_res = (double)(end_time - start_time) / CLOCKS_PER_SEC; \
+  LOG("%s %.6lf\n", text, timer_res);
 
 typedef struct Allocator {
   size_t total_size;

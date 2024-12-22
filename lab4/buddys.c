@@ -17,10 +17,8 @@ EXPORT Allocator *allocator_create(void *const memory, const size_t size) {
   if (size < sizeof(BuddyAllocator) + 16) {
     return NULL;
   }
-  printf("debug\n");
 
   BuddyAllocator *allocator = (BuddyAllocator *)memory;
-  printf("debug\n");
   // Устанавливаем параметры
   allocator->block_size = PAGE_SIZE;
   // Определяем количество блоков
@@ -28,7 +26,6 @@ EXPORT Allocator *allocator_create(void *const memory, const size_t size) {
 
   // bitmap = 1bit/block; флаг занятости
   size_t bitmap_size = (allocator->num_blocks + 7) / 8;
-  printf("debug5\n");
 
   allocator->memory =
       (void *)((uintptr_t)memory + sizeof(BuddyAllocator) + bitmap_size);

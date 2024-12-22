@@ -51,14 +51,19 @@ int _print(char mode, char *fmt, ...) {
   timer_res = (double)(end_time - start_time) / CLOCKS_PER_SEC; \
   LOG("%s %.6lf\n", text, timer_res);
 
-typedef struct Allocator {
-  size_t total_size;
-  void *data;
-} Allocator;
+struct Allocator {
+  size_t total_size;     // общий размер
+  void *memory;          // указатель на память
+  long long in_use_mem;  // занятая память (с учётом накладных расходов)
+  long long requested_mem;  // запрашиваемая память (без накладных расходов)
+};
+typedef struct Allocator Allocator;
 
 typedef struct Allocator_extra {
-  size_t total_size;
-  void *data;
+  size_t total_size;     // общий размер
+  void *memory;          // указатель на память
+  long long in_use_mem;  // занятая память (с учётом накладных расходов)
+  long long requested_mem;  // запрашиваемая память (без накладных расходов)
   size_t offset;
 } Allocator_extra;
 
@@ -71,6 +76,8 @@ typedef void *allocator_alloc_f(Allocator *const allocator, const size_t size);
 // возвращает выделенную память аллокатору
 typedef void allocator_free_f(Allocator *const allocator, void *const memory);
 
+typedef double allocator_usage_factor_f(Allocator *const allocator);
+
 /* блок замененок */
 static Allocator *allocator_create_extra(void *const memory,
                                          const size_t size) {
@@ -79,7 +86,7 @@ static Allocator *allocator_create_extra(void *const memory,
   }
 
   Allocator_extra *allocator = (Allocator_extra *)memory;
-  allocator->data = (void *)((uintptr_t)memory + sizeof(Allocator_extra));
+  allocator->memory = (void *)((uintptr_t)memory + sizeof(Allocator_extra));
   allocator->total_size = size - sizeof(Allocator_extra);
   allocator->offset = 0;
   return (Allocator *)allocator;
@@ -107,7 +114,7 @@ static void *allocator_alloc_extra(Allocator *const allocator,
     return NULL;
   }
 
-  void *allocated_memory = (void *)((uintptr_t)alloc->data + alloc->offset);
+  void *allocated_memory = (void *)((uintptr_t)alloc->memory + alloc->offset);
   alloc->offset += size;
 
   return allocated_memory;

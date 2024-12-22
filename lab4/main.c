@@ -6,6 +6,7 @@ static allocator_create_f* allocator_create;
 static allocator_destroy_f* allocator_destroy;
 static allocator_alloc_f* allocator_alloc;
 static allocator_free_f* allocator_free;
+static allocator_usage_factor_f* allocator_usage_factor;
 
 int main(int argc, char** argv) {
   (void)argc;
@@ -45,6 +46,15 @@ int main(int argc, char** argv) {
       write(STDERR_FILENO, msg, sizeof(msg));
       allocator_free = allocator_free_extra;
     }
+
+    allocator_usage_factor = dlsym(library, "allocator_usage_factor");
+    if (allocator_free == NULL) {
+      const char msg[] =
+          "warning: failed to find allocator_usage_factor function "
+          "implementation\n";
+      write(STDERR_FILENO, msg, sizeof(msg));
+      // allocator_usage_factor = allocator_usage_factor_extra;
+    }
   }
   /* ==================================== */
   /* испольхование стандартной библиотеки */
@@ -76,8 +86,9 @@ int main(int argc, char** argv) {
 
     LOG("Создаем аллокатор\n");
     allocator = allocator_create(memory, SIZE);
-    LOG("%zu Фактор использования == %lf\n", allocator->total_size,
-        (double_t)allocator->total_size / SIZE);
+    // LOG("%zu Фактор использования == %lf %zu\n", allocator->total_size,
+    //     (double_t)allocator->total_size / SIZE,
+    // (double_t)allocator->in_use_mem);
 
     LOG("Аллоцируем\n");
     TIMER_START();
@@ -99,6 +110,9 @@ int main(int argc, char** argv) {
       exit(EXIT_FAILURE);
     }
 
+    LOG("new factor is %lf %zu\n",
+        (double)(39 + 208) / (double)allocator->in_use_mem, allocator->in_use_mem);
+
     sprintf(block2, "Meow meow meow ^_^\nHappy New Year!!!\0");
 
     LOG("Алоцированный блок 1 живет по адресу %p и там есть %d\n", block1,
@@ -107,7 +121,8 @@ int main(int argc, char** argv) {
     LOG("Алоцированный блок 2 живет по адресу %p\n", block2);
 
     LOG("block2 == %s\n", block2);
-
+    // double meow = allocator_usage_factor(allocator);
+    // LOG("new factor is == %lf\n", meow);
     TIMER_START();
     allocator_free(allocator, block1);
     TIMER_END("Чистка блока заняла ");
@@ -115,7 +130,7 @@ int main(int argc, char** argv) {
     allocator_free(allocator, block2);
 
     for (size_t i = 0; i < SIZE; i++) {
-      allocator_alloc(allocator, 1);
+      void* ptr = allocator_alloc(allocator, 1);
     }
 
     void* block3 = allocator_alloc(allocator, 102);  // Должно вернуть NULL

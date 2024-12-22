@@ -1,6 +1,6 @@
 #include "main.h"
 
-#define SIZE (1024 * 1024)
+#define SIZE (1024)
 
 static allocator_create_f* allocator_create;
 static allocator_destroy_f* allocator_destroy;
@@ -113,6 +113,22 @@ int main(int argc, char** argv) {
     TIMER_END("Чистка блока заняла ");
 
     allocator_free(allocator, block2);
+
+    for (size_t i = 0; i < SIZE; i++) {
+      allocator_alloc(allocator, 1);
+    }
+
+    void* block3 = allocator_alloc(allocator, 102);  // Должно вернуть NULL
+    if (block3 == NULL) {
+      LOG("Заполнилось всё - вернуло NULL\n");
+    }
+
+    TIMER_START();
+    for (size_t i = 0; i < INT16_MAX; i++) {
+      void* block = allocator_alloc(allocator, 16);
+      allocator_free(allocator, block);
+    }
+    TIMER_END("Массовое выделение и освобождение заняло ");
 
     LOG("Очищено\n");
     allocator_destroy(allocator);

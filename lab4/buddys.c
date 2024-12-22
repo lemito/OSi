@@ -84,6 +84,9 @@ EXPORT void *allocator_alloc(Allocator *const allocator, const size_t size) {
 EXPORT void allocator_free(Allocator *const allocator, void *const memory) {
   if (memory == NULL || allocator == NULL) return;
   BuddyAllocator *b_allocator = (BuddyAllocator *)allocator;
+  if (b_allocator->total_size == 0) {
+    return;
+  }
 
   uintptr_t offset = (uintptr_t)memory - (uintptr_t)b_allocator->memory;
   size_t block_index = offset / b_allocator->block_size;

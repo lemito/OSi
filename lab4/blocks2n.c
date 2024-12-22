@@ -9,18 +9,19 @@
 
 typedef struct block_t {
   struct block_t *next;  // следующий свободный
+  size_t size;           // размер блока
 } block_t;
 
 typedef struct p2Alloc {
-  size_t total_size;  // размер общий
-  void *memory;       // сама память
+  size_t total_size;  // общий размер
+  void *memory;       // указатель на память
   block_t *free_lists[MAX_BLOCK_CNT];  // массив списков свободных блоков
 } p2Alloc;
 
 // узнаем размер блока, который можно забить под нужный размер
 size_t get_block_size(size_t size) {
-  size_t block_size = 1;
-  while (block_size < size) {
+  size_t block_size = sizeof(block_t);  // учёт размера структуры block_t
+  while (block_size < size + sizeof(block_t)) {
     block_size <<= 1;
   }
   return block_size;
@@ -29,7 +30,7 @@ size_t get_block_size(size_t size) {
 // получаем индекс списка блоков свободных необходимого размера
 int get_list_index(size_t block_size) {
   int index = 0;
-  while (block_size > 1) {
+  while (block_size > MIN_BLOCK_SIZE) {
     block_size >>= 1;
     index++;
   }
@@ -66,6 +67,7 @@ EXPORT Allocator *allocator_create(void *const memory, const size_t size) {
       }
 
       block_t *block = (block_t *)((uintptr_t)allocator->memory + offset);
+      block->size = block_size;
       block->next = allocator->free_lists[index];
       allocator->free_lists[index] = block;
 
@@ -85,7 +87,6 @@ EXPORT Allocator *allocator_create(void *const memory, const size_t size) {
 
 EXPORT void allocator_destroy(Allocator *const allocator) {
   if (allocator == NULL) {
-    // чилиииииииииим
     return;
   }
   p2Alloc *alloc = (p2Alloc *)allocator;
@@ -118,12 +119,16 @@ EXPORT void *allocator_alloc(Allocator *const allocator, const size_t size) {
       // Разделяем большие блоки на меньшие
       while (i > index) {
         i--;
-        block_t *split_block = (block_t *)((uintptr_t)block + (1 << i));
+        size_t smaller_block_size = 1 << i;
+        block_t *split_block =
+            (block_t *)((uintptr_t)block + smaller_block_size);
+        split_block->size = smaller_block_size;
         split_block->next = alloc->free_lists[i];
         alloc->free_lists[i] = split_block;
       }
 
-      return (void *)block;
+      block->size = block_size;
+      return (void *)((uintptr_t)block + sizeof(block_t));
     }
   }
 
@@ -137,9 +142,7 @@ EXPORT void allocator_free(Allocator *const allocator, void *const memory) {
 
   p2Alloc *alloc = (p2Alloc *)allocator;
 
-  LOG("free\n");
-
-  uintptr_t memory_addr = (uintptr_t)memory;
+  uintptr_t memory_addr = (uintptr_t)memory - sizeof(block_t);
   uintptr_t alloc_start = (uintptr_t)alloc->memory;
   uintptr_t alloc_end = alloc_start + alloc->total_size;
 
@@ -147,21 +150,19 @@ EXPORT void allocator_free(Allocator *const allocator, void *const memory) {
     return;
   }
 
-  size_t block_size = MIN_BLOCK_SIZE;
-  uintptr_t offset = memory_addr - alloc_start;
+  block_t *block = (block_t *)memory_addr;
+  size_t block_size = block->size;
 
-  // пытаемся определить размер блока
-  while (block_size <= MAX_BLOCK_SIZE && offset % block_size != 0) {
-    block_size <<= 1;
-  }
-
-  if (block_size > MAX_BLOCK_SIZE) {
+  if (block_size > MAX_BLOCK_SIZE || block_size < MIN_BLOCK_SIZE) {
     return;
   }
 
   int index = get_list_index(block_size);
 
-  block_t *block = (block_t *)memory;
+  if (index < 0 || index >= MAX_BLOCK_CNT) {
+    return;
+  }
+
   block->next = alloc->free_lists[index];
   alloc->free_lists[index] = block;
 }

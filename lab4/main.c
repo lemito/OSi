@@ -111,7 +111,8 @@ int main(int argc, char** argv) {
     }
 
     LOG("new factor is %lf %zu\n",
-        (double)(39 + 208) / (double)allocator->in_use_mem, allocator->in_use_mem);
+        (double)(39 + 208) / (double)allocator->in_use_mem,
+        allocator->in_use_mem);
 
     sprintf(block2, "Meow meow meow ^_^\nHappy New Year!!!\0");
 
@@ -129,13 +130,27 @@ int main(int argc, char** argv) {
 
     allocator_free(allocator, block2);
 
+    void* TEST[SIZE];
+
     for (size_t i = 0; i < SIZE; i++) {
-      void* ptr = allocator_alloc(allocator, 1);
+      TEST[i] = allocator_alloc(allocator, 1);
     }
 
     void* block3 = allocator_alloc(allocator, 102);  // Должно вернуть NULL
     if (block3 == NULL) {
       LOG("Заполнилось всё - вернуло NULL\n");
+    }
+
+    for (size_t i = 0; i < SIZE / 2; i++) {
+      allocator_free(allocator, TEST[i]);
+    }
+
+    for (size_t i = 0; i < SIZE / 2; i++) {
+      TEST[i] = allocator_alloc(allocator, 2);
+    }
+
+    for (size_t i = 0; i < SIZE; i++) {
+      allocator_free(allocator, TEST[i]);
     }
 
     TIMER_START();

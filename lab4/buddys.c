@@ -39,7 +39,7 @@ EXPORT Allocator *allocator_create(void *const memory, const size_t size) {
 
   // Обнуляем битовую карту
   memset(allocator->bitmap, 0, bitmap_size);
-  allocator->total_size = size - bitmap_size;
+  allocator->total_size = size - bitmap_size - sizeof(BuddyAllocator);
 
   LOG("Buddys готовы\n");
 
@@ -102,7 +102,6 @@ EXPORT void *allocator_alloc(Allocator *const allocator, const size_t size) {
   }
 
   if (block_size > b_allocator->total_size) {
-    ERROR("Запрашиваемый размер превышает доступную память\n");
     return NULL;
   }
 
@@ -177,5 +176,6 @@ EXPORT void allocator_free(Allocator *const allocator, void *const memory) {
     }
   }
 
+  // memset(header, 0, block_size);
   return;
 }

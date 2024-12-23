@@ -3,9 +3,9 @@
 // размер страницы
 #define MIN_BLOCK_SIZE 1
 // самый большой блок (не факт даже что будет и нужен)
-#define MAX_BLOCK_SIZE (4096)
+#define MAX_BLOCK_SIZE (INT32_MAX)
 // кол-во списков пусть всего 2^31
-#define MAX_BLOCK_CNT 12
+#define MAX_BLOCK_CNT 31
 
 typedef struct block_t {
   struct block_t *next;  // следующий свободный
@@ -55,24 +55,31 @@ EXPORT Allocator *allocator_create(void *const memory, const size_t size) {
   allocator->total_size = size - sizeof(p2Alloc);
   allocator->in_use_mem = 0;
   allocator->requested_mem = 0;
-
   // Инициализация списков свободных блоков
   memset(allocator->free_lists, 0, sizeof(allocator->free_lists));
-
   // Начинаем разбиение памяти на блоки
   size_t offset = 0;
   size_t remaining_size = allocator->total_size;
 
   while (remaining_size >= MIN_BLOCK_SIZE) {
-    size_t block_size = MIN_BLOCK_SIZE;  // Всегда начинаем с минимального блока
+    size_t block_size =
+        MAX_BLOCK_SIZE;  // Всегда начинаем с максимального блока
 
-    // Разбиваем оставшийся размер на блоки, начиная от минимального до
-    // максимально возможного
-    while (block_size <= remaining_size && block_size <= MAX_BLOCK_SIZE) {
+    // Разбиваем оставшийся размер на блоки, начиная от максимального до
+    // минимального
+    while (block_size >= MIN_BLOCK_SIZE) {
+      if (block_size > remaining_size) {
+        block_size >>=
+            1;  // Уменьшаем размер блока вдвое, пока он не станет подходящим
+        continue;
+      }
+
       int index = get_list_index(block_size);
 
       if (index >= MAX_BLOCK_CNT) {
-        break;  // Если индекс выходит за пределы доступных списков
+        block_size >>= 1;  // Если индекс выходит за пределы доступных списков,
+                           // уменьшаем блок
+        continue;
       }
 
       block_t *block = (block_t *)((uintptr_t)allocator->memory + offset);
@@ -83,8 +90,6 @@ EXPORT Allocator *allocator_create(void *const memory, const size_t size) {
 
       offset += block_size;
       remaining_size -= block_size;
-
-      block_size <<= 1;
     }
 
     if (remaining_size < MIN_BLOCK_SIZE) {

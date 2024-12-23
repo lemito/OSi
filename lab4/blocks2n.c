@@ -22,6 +22,9 @@ typedef struct p2Alloc {
 
 // узнаем размер блока, который можно забить под нужный размер
 size_t get_block_size(size_t size) {
+  if (size == 1) {
+    return 1;
+  }
   size_t block_size = 2;
   while (block_size < size) {  // + sizeof(block_t)
     block_size <<= 1;
@@ -138,11 +141,10 @@ EXPORT void *allocator_alloc(Allocator *const allocator, const size_t size) {
         alloc->free_lists[i] = split_block;
       }
 
-      block->size = block_size;  // Устанавливаем размер блока
-      alloc->in_use_mem += block_size;  // Увеличиваем занятый объём памяти
-      alloc->requested_mem += size;  // Учитываем реальный запрос пользователя
+      block->size = block_size;
+      alloc->in_use_mem += block_size;
+      alloc->requested_mem += size;
 
-      // Возвращаем память с учётом смещения на заголовок блока
       return (void *)((uintptr_t)block + sizeof(block_t));
     }
   }

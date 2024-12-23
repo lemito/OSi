@@ -141,6 +141,7 @@ int main(int argc, char** argv) {
 
     for (size_t i = 0; i < SIZE; i++) {
       TEST[i] = allocator_alloc(allocator, 1);
+      // LOG("%zu saved\n", i);
     }
 
     void* block3 = allocator_alloc(allocator, 102);  // Должно вернуть NULL

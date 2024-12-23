@@ -152,6 +152,7 @@ EXPORT void *allocator_alloc(Allocator *const allocator, const size_t size) {
 
       block->size = block_size;  // Устанавливаем размер блока
       alloc->in_use_mem += block_size;  // Увеличиваем занятый объём памяти
+      // LOG("%lld\n", alloc->in_use_mem);
       alloc->requested_mem += size;  // Учитываем реальный запрос пользователя
       return (void *)((uintptr_t)block + sizeof(block_t));  // Возвращаем память
     }
@@ -198,20 +199,6 @@ EXPORT void allocator_free(Allocator *const allocator, void *const memory) {
   alloc->free_lists[index] = block;
   alloc->in_use_mem -= block_size;
   alloc->requested_mem -= block_size - sizeof(block_t);
-}
 
-EXPORT double allocator_usage_factor(Allocator *const allocator) {
-  if (NULL == allocator) {
-    return 0.0;
-  }
-
-  p2Alloc *alloc = (p2Alloc *)allocator;
-
-  if (alloc->in_use_mem == 0) {
-    return 0.0;
-  }
-
-  LOG("meow meow %lld __ %lld\n", alloc->requested_mem / alloc->in_use_mem);
-
-  return (double)alloc->requested_mem / (double)alloc->in_use_mem;
+  // LOG("meow meow %lld __ %lld\n", alloc->requested_mem / alloc->in_use_mem);
 }

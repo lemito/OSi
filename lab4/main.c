@@ -1,6 +1,6 @@
 #include "main.h"
 
-#define SIZE (1024)
+#define SIZE (BUFSIZ)
 
 static allocator_create_f* allocator_create;
 static allocator_destroy_f* allocator_destroy;
@@ -140,21 +140,23 @@ int main(int argc, char** argv) {
     void* TEST[SIZE];
 
     for (size_t i = 0; i < SIZE; i++) {
-      TEST[i] = allocator_alloc(allocator, 1);
       // LOG("%zu saved\n", i);
+      TEST[i] = allocator_alloc(allocator, 1);
     }
+    // LOG("1\n");
 
-    void* block3 = allocator_alloc(allocator, 102);  // Должно вернуть NULL
+    void* block3 = allocator_alloc(allocator, 8192 * 2);  // Должно вернуть NULL
     if (block3 == NULL) {
       LOG("Заполнилось всё - вернуло NULL\n");
     }
+    // LOG("1\n");
 
     for (size_t i = 0; i < SIZE / 2; i++) {
       allocator_free(allocator, TEST[i]);
     }
 
     for (size_t i = 0; i < SIZE / 2; i++) {
-      TEST[i] = allocator_alloc(allocator, 2);
+      TEST[i] = allocator_alloc(allocator, 1);
     }
 
     for (size_t i = 0; i < SIZE; i++) {

@@ -7,10 +7,10 @@ typedef struct block_t {
 } block_t;
 
 typedef struct BuddyAllocator {
-  size_t total_size;     // общий размер
-  void *memory;          // указатель на память
-  long long in_use_mem;  // занятая память (с учётом накладных расходов)
-  long long requested_mem;  // запрашиваемая память (без накладных расходов)
+  size_t total_size;        // общий размер
+  void *memory;             // указатель на память
+  long long in_use_mem;     // занятая память
+  long long requested_mem;  // запрашиваемая память
   size_t block_size;        // размер блока памяти
   size_t num_blocks;        // Общее количество блоков
   uint8_t *bitmap;  // Битовая карта для отслеживания свободных/занятых блоков

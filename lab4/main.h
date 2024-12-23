@@ -65,22 +65,18 @@ int _print(char mode, char *fmt, ...) {
   };
 
 struct Allocator {
-  size_t total_size;  // общий размер
-  void *memory;       // указатель на память
-  long long in_use_mem;  // занятая память (с учётом накладных
-                         // расходов)
-  long long requested_mem;  // запрашиваемая память (без
-                            // накладных расходов)
+  size_t total_size;        // общий размер
+  void *memory;             // указатель на память
+  long long in_use_mem;     // занятая память
+  long long requested_mem;  // запрашиваемая память
 };
 typedef struct Allocator Allocator;
 
 typedef struct Allocator_extra {
-  size_t total_size;  // общий размер
-  void *memory;       // указатель на память
-  long long in_use_mem;  // занятая память (с учётом накладных
-                         // расходов)
-  long long requested_mem;  // запрашиваемая память (без
-                            // накладных расходов)
+  size_t total_size;        // общий размер
+  void *memory;             // указатель на память
+  long long in_use_mem;     // занятая память
+  long long requested_mem;  // запрашиваемая память
   size_t offset;
 } Allocator_extra;
 

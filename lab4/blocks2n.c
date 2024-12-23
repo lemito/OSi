@@ -13,10 +13,10 @@ typedef struct block_t {
 } block_t;
 
 typedef struct p2Alloc {
-  size_t total_size;     // общий размер
-  void *memory;          // указатель на память
-  long long in_use_mem;  // занятая память (с учётом накладных расходов)
-  long long requested_mem;  // запрашиваемая память (без накладных расходов)
+  size_t total_size;        // общий размер
+  void *memory;             // указатель на память
+  long long in_use_mem;     // занятая память
+  long long requested_mem;  // запрашиваемая память
   block_t *free_lists[MAX_BLOCK_CNT];  // массив списков свободных блоков
 } p2Alloc;
 

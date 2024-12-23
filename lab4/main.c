@@ -8,6 +8,18 @@ static allocator_alloc_f* allocator_alloc;
 static allocator_free_f* allocator_free;
 static allocator_usage_factor_f* allocator_usage_factor;
 
+typedef struct allocator {
+  Allocator* (*allocator_create_f)(void* const memory, const size_t size);
+  // деинициализация структуры аллокатора
+  void (*allocator_destroy_f)(Allocator* const allocator);
+  // выделение памяти аллокатором памяти размера size
+  void* (*allocator_alloc_f)(Allocator* const allocator, const size_t size);
+  // возвращает выделенную память аллокатору
+  void (*allocator_free_f)(Allocator* const allocator, void* const memory);
+
+  double (*allocator_usage_factor_f)(Allocator* const allocator);
+} allocator;
+
 int main(int argc, char** argv) {
   (void)argc;
   LOG("mem create");
@@ -77,12 +89,7 @@ int main(int argc, char** argv) {
     TIMER_INIT();          // времечко
 
     LOG("Создаем memory\n");
-    memory = mmap(NULL, SIZE, PROT_READ | PROT_WRITE,
-                  MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-    if (memory == MAP_FAILED) {
-      perror("mmap failed\n");
-      return 1;
-    }
+    HEAP_INIT(memory, SIZE);
 
     LOG("Создаем аллокатор\n");
     allocator = allocator_create(memory, SIZE);
@@ -163,7 +170,7 @@ int main(int argc, char** argv) {
     LOG("Очищено\n");
     allocator_destroy(allocator);
 
-    munmap(memory, SIZE);
+    HEAP_DESTROY(memory, SIZE);
   }
 
   /* ==================================== */

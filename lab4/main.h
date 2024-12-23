@@ -51,19 +51,36 @@ int _print(char mode, char *fmt, ...) {
   timer_res = (double)(end_time - start_time) / CLOCKS_PER_SEC; \
   LOG("%s %.6lf\n", text, timer_res);
 
+#define HEAP_INIT(name, siz)                                                  \
+  name = mmap(NULL, siz, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, \
+              -1, 0);                                                         \
+  if (name == MAP_FAILED) {                                                   \
+    ERROR("mmap failed\n");                                                   \
+    return 1;                                                                 \
+  }
+#define HEAP_DESTROY(name, siz)     \
+  if (munmap(memory, SIZE) == -1) { \
+    ERROR("munmap failed\n");       \
+    exit(EXIT_FAILURE);             \
+  };
+
 struct Allocator {
-  size_t total_size;     // общий размер
-  void *memory;          // указатель на память
-  long long in_use_mem;  // занятая память (с учётом накладных расходов)
-  long long requested_mem;  // запрашиваемая память (без накладных расходов)
+  size_t total_size;  // общий размер
+  void *memory;       // указатель на память
+  long long in_use_mem;  // занятая память (с учётом накладных
+                         // расходов)
+  long long requested_mem;  // запрашиваемая память (без
+                            // накладных расходов)
 };
 typedef struct Allocator Allocator;
 
 typedef struct Allocator_extra {
-  size_t total_size;     // общий размер
-  void *memory;          // указатель на память
-  long long in_use_mem;  // занятая память (с учётом накладных расходов)
-  long long requested_mem;  // запрашиваемая память (без накладных расходов)
+  size_t total_size;  // общий размер
+  void *memory;       // указатель на память
+  long long in_use_mem;  // занятая память (с учётом накладных
+                         // расходов)
+  long long requested_mem;  // запрашиваемая память (без
+                            // накладных расходов)
   size_t offset;
 } Allocator_extra;
 

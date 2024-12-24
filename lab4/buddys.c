@@ -135,7 +135,7 @@ EXPORT void *allocator_alloc(Allocator *const allocator, const size_t size) {
   header->size = block_size;
 
   // Обновляем статистику
-  b_allocator->in_use_mem += block_size;
+  b_allocator->in_use_mem += block_size + sizeof(block_t);
 
   // Возвращаем указатель на память сразу после заголовка
   return (void *)(block_address + sizeof(block_t));
@@ -161,7 +161,7 @@ EXPORT void allocator_free(Allocator *const allocator, void *const memory) {
   b_allocator->bitmap[byte_index] &= ~(1 << bit_index);
 
   // Обновляем статистику
-  b_allocator->in_use_mem -= block_size;
+  b_allocator->in_use_mem -= (block_size + sizeof(block_t));
 
   // Пытаемся объединить блоки
   while (block_size < b_allocator->total_size) {

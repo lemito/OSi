@@ -155,7 +155,7 @@ EXPORT void *allocator_alloc(Allocator *const allocator, const size_t size) {
     block_t *block = (block_t *)overflow_addr;
     block->size = block_size;
 
-    alloc->in_use_mem += block_size;
+    alloc->in_use_mem += block_size + sizeof(block_t);
     alloc->requested_mem += size;
 
     return (void *)((uintptr_t)block + sizeof(block_t));
@@ -201,7 +201,7 @@ EXPORT void allocator_free(Allocator *const allocator, void *const memory) {
   memset(block, 0, block_size);
   block->next = alloc->free_lists[index];
   alloc->free_lists[index] = block;
-  alloc->in_use_mem -= block_size;
+  alloc->in_use_mem -= (block_size + sizeof(block_t));
   alloc->requested_mem -= block_size - sizeof(block_t);
 
   // LOG("meow meow %lld __ %lld\n", alloc->requested_mem / alloc->in_use_mem);

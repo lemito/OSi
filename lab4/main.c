@@ -8,17 +8,11 @@ static allocator_alloc_f* allocator_alloc;
 static allocator_free_f* allocator_free;
 static allocator_usage_factor_f* allocator_usage_factor;
 
-typedef struct allocator {
-  Allocator* (*allocator_create_f)(void* const memory, const size_t size);
-  // деинициализация структуры аллокатора
-  void (*allocator_destroy_f)(Allocator* const allocator);
-  // выделение памяти аллокатором памяти размера size
-  void* (*allocator_alloc_f)(Allocator* const allocator, const size_t size);
-  // возвращает выделенную память аллокатору
-  void (*allocator_free_f)(Allocator* const allocator, void* const memory);
-
-  double (*allocator_usage_factor_f)(Allocator* const allocator);
-} allocator;
+typedef struct test_struct {
+  int32_t meow;
+  char name[53];
+  double dbl;
+} test_struct;
 
 int main(int argc, char** argv) {
   (void)argc;
@@ -82,20 +76,18 @@ int main(int argc, char** argv) {
 
   /* сами действие */
   {
-    Allocator* allocator;  // алокатор
-    void* memory;          // пул памяти
-    int* block1;           // тестовый блок 1
-    char* block2;          // тестовый блок 2
-    TIMER_INIT();          // времечко
+    Allocator* allocator;       // алокатор
+    void* memory;               // пул памяти
+    int* block1;                // тестовый блок 1
+    char* block2;               // тестовый блок 2
+    test_struct* block_struct;  // тестовый блок 3
+    TIMER_INIT();               // времечко
 
     LOG("Создаем memory\n");
     HEAP_INIT(memory, SIZE);
 
     LOG("Создаем аллокатор\n");
     allocator = allocator_create(memory, SIZE);
-    // LOG("%zu Фактор использования == %lf %zu\n", allocator->total_size,
-    //     (double_t)allocator->total_size / SIZE,
-    // (double_t)allocator->in_use_mem);
 
     LOG("Аллоцируем\n");
     TIMER_START();
@@ -105,6 +97,7 @@ int main(int argc, char** argv) {
       exit(EXIT_FAILURE);
     }
     TIMER_END("Аллокация заняла ");
+
     for (size_t i = 0; i < 53; i++) {
       block1[i] = 27022005 - (i % 52);
     }
@@ -117,9 +110,22 @@ int main(int argc, char** argv) {
       exit(EXIT_FAILURE);
     }
 
-    LOG("new factor is %lf %zu\n",
-        (double)(39 + 208) / (double)allocator->in_use_mem,
+    /* тест на правильное выделение памяти и отсуствие пересечений */
+    block_struct =
+        (test_struct*)allocator_alloc(allocator, sizeof(test_struct));
+
+    block_struct->dbl = __DBL_MAX__;
+    strncpy(block_struct->name,
+            "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM", 53);
+    block_struct->meow = INT32_MAX;
+    /**/
+
+    LOG("Фактор использования == %lf  [%zu]\n",
+        (double)(39 + (sizeof(int) * 52) + sizeof(test_struct)) /
+            (double)allocator->in_use_mem,
         allocator->in_use_mem);
+
+    allocator_free(allocator, block_struct);
 
     sprintf(block2, "Meow meow meow ^_^\nHappy New Year!!!\0");
 
@@ -129,8 +135,7 @@ int main(int argc, char** argv) {
     LOG("Алоцированный блок 2 живет по адресу %p\n", block2);
 
     LOG("block2 == %s\n", block2);
-    // double meow = allocator_usage_factor(allocator);
-    // LOG("new factor is == %lf\n", meow);
+
     TIMER_START();
     allocator_free(allocator, block1);
     TIMER_END("Чистка блока заняла ");
@@ -139,11 +144,11 @@ int main(int argc, char** argv) {
 
     void* TEST[SIZE];
 
+    /* тест на переполнение */
     for (size_t i = 0; i < SIZE; i++) {
       // LOG("%zu saved\n", i);
       TEST[i] = allocator_alloc(allocator, 1);
     }
-    // LOG("1\n");
 
     void* block3 = allocator_alloc(allocator, 8192 * 2);  // Должно вернуть NULL
     if (block3 == NULL) {
@@ -151,6 +156,7 @@ int main(int argc, char** argv) {
     }
     // LOG("1\n");
 
+    /* просто рандомные стресс-тесты */
     for (size_t i = 0; i < SIZE / 2; i++) {
       allocator_free(allocator, TEST[i]);
     }

@@ -1,5 +1,5 @@
-#ifndef __BUDDYS_H
-#define __BUDDYS_H
+#ifndef __MAIN_H
+#define __MAIN_H
 
 #include <assert.h>
 #include <dlfcn.h>  // dlopen, dlsym, dlclose, RTLD_*
@@ -140,4 +140,4 @@ static void allocator_free_extra(Allocator *const allocator,
 }
 /**/
 
-#endif  // __BUDDYS_H
+#endif  // __MAIN_H

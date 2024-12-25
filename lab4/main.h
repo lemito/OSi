@@ -52,12 +52,15 @@ int _print(char mode, char *fmt, ...) {
   LOG("%s %.6lf\n", text, timer_res);
 
 #define HEAP_INIT(name, siz)                                                  \
+  Allocator *allocator;                                                       \
+  void *name;                                                                 \
   name = mmap(NULL, siz, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, \
               -1, 0);                                                         \
   if (name == MAP_FAILED) {                                                   \
     ERROR("mmap failed\n");                                                   \
     return 1;                                                                 \
   }
+
 #define HEAP_DESTROY(name, siz)     \
   if (munmap(memory, SIZE) == -1) { \
     ERROR("munmap failed\n");       \
@@ -129,7 +132,7 @@ static void *allocator_alloc_extra(Allocator *const allocator,
 
   void *allocated_memory = (void *)((uintptr_t)alloc->memory + alloc->offset);
   alloc->offset += size;
-
+  alloc->in_use_mem += size;
   return allocated_memory;
 }
 

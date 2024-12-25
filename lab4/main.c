@@ -76,15 +76,13 @@ int main(int argc, char** argv) {
 
   /* сами действие */
   {
-    Allocator* allocator;       // алокатор
-    void* memory;               // пул памяти
+    HEAP_INIT(memory, SIZE);    // пул памяти
     int* block1;                // тестовый блок 1
     char* block2;               // тестовый блок 2
     test_struct* block_struct;  // тестовый блок 3
     TIMER_INIT();               // времечко
 
     LOG("Создаем memory\n");
-    HEAP_INIT(memory, SIZE);
 
     LOG("Создаем аллокатор\n");
     allocator = allocator_create(memory, SIZE);

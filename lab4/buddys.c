@@ -61,32 +61,6 @@ EXPORT void allocator_destroy(Allocator *const allocator) {
   return;
 }
 
-// EXPORT void *allocator_alloc(Allocator *const allocator, const size_t size) {
-//   if (allocator == NULL || size == 0) return NULL;
-//   BuddyAllocator *b_allocator = (BuddyAllocator *)allocator;
-
-//   size_t block_size = b_allocator->block_size;
-//   while (block_size < size) {
-//     block_size *= 2;  // делаем кратным 2
-//   }
-
-//   if (size > b_allocator->total_size) return NULL;
-
-//   // блоки подходящего размера (их поиск с помощью битовой карты)
-//   for (size_t i = 0; i < b_allocator->num_blocks; i++) {
-//     size_t byte_index = i / 8;
-//     size_t bit_index = i % 8;
-
-//     if (!(b_allocator->bitmap[byte_index] & (1 << bit_index))) {
-//       // Если блок свободен, метим его как занятый
-//       b_allocator->bitmap[byte_index] |= (1 << bit_index);
-//       b_allocator->in_use_mem += block_size;
-//       return (void *)((uintptr_t)b_allocator->memory + i * block_size);
-//     }
-//   }
-
-//   return NULL;
-// }
 EXPORT void *allocator_alloc(Allocator *const allocator, const size_t size) {
   if (allocator == NULL || size == 0) {
     return NULL;

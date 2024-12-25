@@ -86,7 +86,7 @@ int main(int argc, char** argv) {
         shm_unlink(SHM_NAME);
         exit(EXIT_FAILURE);
       }
-
+ write(STDOUT_FILENO, "mmap4", 6);
       char* src = mmap(NULL, file_stat.st_size, PROT_READ | PROT_WRITE,
                        MAP_SHARED, shm_fd, 0);
       if (src == MAP_FAILED) {
@@ -179,6 +179,7 @@ int main(int argc, char** argv) {
       ftruncate(shm_fd, BUFSIZ);
 
       char* res;
+       write(STDOUT_FILENO, "mmap5", 6);
       if ((res = mmap(0, BUFSIZ, PROT_READ, MAP_SHARED, shm_fd, 0)) ==
           MAP_FAILED) {
         _print(ERROR, "error: res mmap parrent\n");

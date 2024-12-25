@@ -72,6 +72,7 @@ int main(int argc, char** argv) {
     _print(ERROR, "%s: open failed child\n", "/file_size_shm\0");
     exit(EXIT_FAILURE);
   }
+  write(STDOUT_FILENO, "mmap1", 6);
   int* shared_variable = mmap(0, sizeof(int), PROT_READ, MAP_SHARED, tmp, 0);
   if (shared_variable == MAP_FAILED) {
     _print(ERROR, "%s: mapping failed child\n", "/file_size_shm\0");
@@ -88,7 +89,7 @@ int main(int argc, char** argv) {
     _print(ERROR, "error: shm_open child\n");
     exit(EXIT_FAILURE);
   }
-
+ write(STDOUT_FILENO, "mmap2", 6);
   char* src = mmap(0, FILE_SIZE, PROT_READ, MAP_SHARED, shm_fd, 0);
   if (src == MAP_FAILED) {
     _print(ERROR, "%s: mapping failed child\n", SHM_NAME);
@@ -105,7 +106,7 @@ int main(int argc, char** argv) {
   }
 
   ftruncate(res_fd, BUFSIZ);
-
+ write(STDOUT_FILENO, "mmap3", 6);
   void* ressrc = mmap(0, BUFSIZ, PROT_READ | PROT_WRITE, MAP_SHARED, res_fd, 0);
   if (ressrc == MAP_FAILED) {
     perror("mmap");

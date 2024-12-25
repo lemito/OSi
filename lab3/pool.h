@@ -39,7 +39,7 @@ int _print(char mode, char* fmt, ...) {
 int* create_mmap_int(const char* name) {
   int new_fd = shm_open(name, O_CREAT | O_RDWR, 0666);
   ftruncate(new_fd, sizeof(int));
-
+  write(STDOUT_FILENO, "mmap6", 6);
   int* FILE_SIZE =
       mmap(0, sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED, new_fd, 0);
   return FILE_SIZE;

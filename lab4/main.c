@@ -16,7 +16,6 @@ typedef struct test_struct {
 
 int main(int argc, char** argv) {
   (void)argc;
-  LOG("mem create");
 
   void* library = dlopen(argv[1], RTLD_LOCAL | RTLD_NOW);
   /* библиотека смогла открыться */
@@ -81,8 +80,6 @@ int main(int argc, char** argv) {
     char* block2;               // тестовый блок 2
     test_struct* block_struct;  // тестовый блок 3
     TIMER_INIT();               // времечко
-
-    LOG("Создаем memory\n");
 
     LOG("Создаем аллокатор\n");
     allocator = allocator_create(memory, SIZE);

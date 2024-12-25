@@ -86,7 +86,7 @@ int main(int argc, char** argv) {
 
     LOG("Аллоцируем\n");
     TIMER_START();
-    block1 = (int*)allocator_alloc(allocator, sizeof(int) * 52);
+    block1 = (int*)allocator_alloc(allocator, sizeof(int32_t) * 52);
     if (block1 == NULL) {
       ERROR("block1 NULL\n");
       exit(EXIT_FAILURE);
@@ -116,7 +116,7 @@ int main(int argc, char** argv) {
     /**/
 
     LOG("Фактор использования == %lf  [%zu / %zu]\n",
-        (double)(39 + (sizeof(int) * 52) + sizeof(test_struct)) /
+        (double)(39 + (sizeof(int32_t) * 52) + sizeof(test_struct)) /
             (double)allocator->in_use_mem,
         (39 + (sizeof(int) * 52) + sizeof(test_struct)), allocator->in_use_mem);
 

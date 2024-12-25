@@ -16,8 +16,8 @@ typedef struct test_struct {
 
 int main(int argc, char** argv) {
   (void)argc;
-
   void* library = dlopen(argv[1], RTLD_LOCAL | RTLD_NOW);
+
   /* библиотека смогла открыться */
   if (library != NULL) {
     allocator_create = dlsym(library, "allocator_create");
@@ -115,10 +115,10 @@ int main(int argc, char** argv) {
     block_struct->meow = INT32_MAX;
     /**/
 
-    LOG("Фактор использования == %lf  [%zu]\n",
+    LOG("Фактор использования == %lf  [%zu / %zu]\n",
         (double)(39 + (sizeof(int) * 52) + sizeof(test_struct)) /
             (double)allocator->in_use_mem,
-        allocator->in_use_mem);
+        (39 + (sizeof(int) * 52) + sizeof(test_struct)), allocator->in_use_mem);
 
     allocator_free(allocator, block_struct);
 

@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/main",
-            "args": [],
+            "args": ["./blocks2n.so"],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
             "environment": [],

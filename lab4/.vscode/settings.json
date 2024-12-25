@@ -2,6 +2,7 @@
     "files.associations": {
         "cstdint": "c",
         "main.h": "c",
-        "*.tcc": "c"
+        "*.tcc": "c",
+        "random": "c"
     }
 }

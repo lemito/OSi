@@ -1,6 +1,6 @@
 #include "main.h"
 
-#define PAGE_SIZE 1
+#define PAGE_SIZE 32
 
 typedef struct block_t {
   size_t size;  // Размер блока
